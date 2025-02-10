@@ -26,7 +26,7 @@ jobs:
               const fileContent = await fs.readFile(configPath, 'utf-8');
               config = JSON.parse(fileContent);
             } catch (error) {
-              console.error(`❌ Fehler beim Laden der Konfigurationsdatei: ${error.message}`);
+              console.error(`❌ Issue while load config file: ${error.message}`);
               return;
             }
 
