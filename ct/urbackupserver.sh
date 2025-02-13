@@ -5,7 +5,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/r
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://www.urbackup.org/
 
-# App Default Values
 APP="UrBackup Server"
 var_tags="web"
 var_cpu="1"

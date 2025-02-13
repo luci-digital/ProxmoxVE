@@ -5,7 +5,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # Author: Nícolas Pastorello (opastorello)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 
-# App Default Values
 APP="GLPI"
 var_tags="asset-management;foss"
 var_cpu="2"

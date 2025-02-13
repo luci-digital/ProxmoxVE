@@ -4,7 +4,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # Author: MickLesk (Canbiz)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 
-# App Default Values
 APP="NodeBB"
 var_tags="forum"
 var_disk="10"

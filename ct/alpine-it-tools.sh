@@ -5,7 +5,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 
 
-# App Default Values
 APP="Alpine-IT-Tools"
 var_tags="alpine;development"
 var_cpu="1"

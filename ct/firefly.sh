@@ -6,7 +6,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://firefly-iii.org/
 
-# App Default Values
 APP="Firefly"
 var_tags="finance"
 var_cpu="1"

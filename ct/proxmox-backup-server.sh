@@ -25,10 +25,6 @@ var_os="debian"
 var_version="12"
 var_unprivileged="1"
 
-# App Output & Base Settings
-base_settings
-
-# Core 
 variables
 color
 catch_errors

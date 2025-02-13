@@ -6,7 +6,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://www.jenkins.io/
 
-# App Default Values
 APP="Jenkins"
 var_tags="automation"
 var_cpu="2"

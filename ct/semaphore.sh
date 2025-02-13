@@ -6,7 +6,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://semaphoreui.com/
 
-# App Default Values
 APP="Semaphore"
 var_tags="dev_ops"
 var_cpu="2"
