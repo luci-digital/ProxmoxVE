@@ -5,7 +5,6 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/r
 # License: | MIT https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://guacamole.apache.org/
 
-#App Default Values
 APP="Apache-Guacamole"
 var_tags="webserver;remote"
 var_disk="4"
