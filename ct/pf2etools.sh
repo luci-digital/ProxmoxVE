@@ -52,8 +52,6 @@ function update_script() {
 
     msg_info "Cleaning Up"
     rm -rf /opt/${RELEASE}.zip
-    $STD apt-get -y autoremove
-    $STD apt-get -y autoclean
     msg_ok "Cleanup Completed"
   else
     msg_ok "No update required. ${APP} is already at ${RELEASE}"
