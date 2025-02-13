@@ -29,7 +29,6 @@ function update_script() {
     check_container_storage
     check_container_resources
 
-    # Check if installation is present | -f for file, -d for folder
     if [[ ! -d "/opt/${APP}" ]]; then
         msg_error "No ${APP} Installation Found!"
         exit
@@ -49,8 +48,8 @@ function update_script() {
         rm -rf "/opt/${APP}"
         mv ${APP}-${RELEASE:1} /opt/${APP}
         cd /opt/Pf2eTools
-        $STD npm install
-        $STD npm run build
+        npm install &> /dev/null
+        npm run build &> /dev/null
 		chown -R www-data: "/opt/${APP}"
         chmod -R 755 "/opt/${APP}"
         echo "${RELEASE}" >"/opt/${APP}_version.txt"
