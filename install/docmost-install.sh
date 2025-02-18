@@ -18,6 +18,7 @@ $STD apt-get install -y \
   gpg \
   curl \
   sudo \
+  redis \
   make \
   mc \
   postgresql
