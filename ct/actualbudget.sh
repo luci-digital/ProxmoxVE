@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
-
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -45,18 +44,28 @@ function update_script() {
         mv /opt/actualbudget /opt/actualbudget_bak
         tar -xzf "v${RELEASE}.tar.gz" >/dev/null 2>&1
         mv *ctual-server-* /opt/actualbudget
-        if [[ ! -d /opt/actualbudget-data ]]; then
-            mkdir -p /opt/actualbudget-data/server-files
+
+        mkdir -p /opt/actualbudget-data/{server-files,upload,migrate,user-files,migrations,config}
+        for dir in server-files .migrate user-files migrations; do
+            if [[ -d /opt/actualbudget_bak/$dir ]]; then
+                mv /opt/actualbudget_bak/$dir/* /opt/actualbudget-data/$dir/ 2>/dev/null || true
+            fi
+        done
+
+        if [[ -f /opt/actualbudget_bak/.env ]]; then
+            mv /opt/actualbudget_bak/.env /opt/actualbudget-data/.env
+        else
+            cat <<EOF > /opt/actualbudget-data/.env
+ACTUAL_UPLOAD_DIR=/opt/actualbudget-data/upload
+ACTUAL_DATA_DIR=/opt/actualbudget-data
+ACTUAL_SERVER_FILES_DIR=/opt/actualbudget-data/server-files
+ACTUAL_USER_FILES=/opt/actualbudget-data/user-files
+PORT=9006
+ACTUAL_CONFIG_PATH=/opt/actualbudget-data/config/config.json
+ACTUAL_TRUSTED_PROXIES="10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7, ::1/128"
+EOF
         fi
 
-        rm -rf /opt/actualbudget/.env
-        if [[ ! -f /opt/actualbudget_bak/.env ]]; then
-            cat <<EOF > /opt/actualbudget_bak/.env
-ACTUAL_UPLOAD_DIR=/opt/actualbudget/server-files
-ACTUAL_DATA_DIR=/opt/actualbudget-data
-ACTUAL_SERVER_FILES_DIR=/opt/actualbudget/server-files
-PORT=5006
-EOF
         fi
         mv /opt/actualbudget_bak/.env /opt/actualbudget/
         if [[ -d /opt/actualbudget_bak/server-files ]] && [[ -n $(ls -A /opt/actualbudget_bak/server-files 2>/dev/null) ]]; then
@@ -72,7 +81,7 @@ EOF
         msg_ok "Updated ${APP}"
 
         msg_info "Starting ${APP}"
-        cat <<EOF >/etc/systemd/system/actualbudget.service
+        cat <<EOF > /etc/systemd/system/actualbudget.service
 [Unit]
 Description=Actual Budget Service
 After=network.target
@@ -82,7 +91,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/opt/actualbudget
-EnvironmentFile=/opt/actualbudget/.env
+EnvironmentFile=/opt/actualbudget-data/.env
 ExecStart=/usr/bin/yarn start
 Restart=always
 RestartSec=10
@@ -90,6 +99,8 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
+
+        systemctl daemon-reload
         systemctl start actualbudget
         msg_ok "Started ${APP}"
 
