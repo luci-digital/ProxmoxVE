@@ -14,14 +14,16 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
-$STD apt-get install -y curl
-$STD apt-get install -y sudo
-$STD apt-get install -y mc
-$STD apt-get install -y ufw
-$STD apt-get install -y ntp
+$STD apt-get install -y \
+  curl \
+  sudo \
+  mc \
+  ufw
 msg_ok "Installed Dependencies"
 
 msg_info "Installing Pi-hole"
+# View script https://install.pi-hole.net
+$STD bash <(curl -fsSL https://install.pi-hole.net)
 mkdir -p /etc/pihole/
 cat <<EOF >/etc/pihole/setupVars.conf
 PIHOLE_INTERFACE=eth0
@@ -38,8 +40,7 @@ DNSMASQ_LISTENING=local
 WEBPASSWORD=$(openssl rand -base64 48)
 BLOCKING_ENABLED=true
 EOF
-# View script https://install.pi-hole.net
-$STD bash <(curl -fsSL https://install.pi-hole.net) --unattended
+pihole-FTL --config ntp.sync.interval 0
 msg_ok "Installed Pi-hole"
 
 read -r -p "Would you like to add Unbound? <y/N> " prompt
