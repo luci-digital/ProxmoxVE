@@ -21,12 +21,6 @@ fi
 # Execute the latest version of the script
 exec bash "$INSTALL_DIR/install/$SCRIPT_NAME"
 
-#!/usr/bin/env bash
-
-# TON Validator Node Installation Script for Proxmox VE
-# Author: Luci Digital
-# License: CC0-1.0 | https://github.com/luci-digital/ProxmoxVE/raw/main/LICENSE
-
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
@@ -35,13 +29,8 @@ setting_up_container
 network_check
 update_os
 
-
 msg_info "Installing Dependencies"
-$STD apt-get install -y curl
-$STD apt-get install -y sudo
-$STD apt-get install -y mc
-$STD apt-get install -y curl 
-sudo mc git jq build-essential
+$STD apt-get install -y curl sudo mc git jq build-essential
 msg_ok "Installed Dependencies"
 
 motd_ssh
@@ -169,21 +158,3 @@ $STD apt-get -y autoclean
 msg_ok "Cleaned"
 
 msg_info "Installation Completed"
-echo -e "
-╔════════════════════════════════════════════════════════════════╗
-║                 TON VALIDATOR INSTALLATION COMPLETE            ║
-╚════════════════════════════════════════════════════════════════╝
-
-→ Status: $(systemctl is-active ton-validator)
-→ Login: ssh root@${PUBLIC_IP}
-→ Check service: systemctl status ton-validator
-→ View logs: journalctl -u ton-validator -f
-→ Config file: /opt/tonvalidator/config.json
-
-Don't forget to:
-1. Secure your validator key and wallet address.
-2. Ensure port ${VALIDATOR_PORT} is open.
-3. Monitor your validator node for uptime and performance.
-
-🚀 Installation script from: https://github.com/luci-digital/ProxmoxVE
-"
