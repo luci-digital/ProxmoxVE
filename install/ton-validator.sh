@@ -12,9 +12,17 @@ setting_up_container
 network_check
 update_os
 
+
 msg_info "Installing Dependencies"
-$STD apt-get install -y curl sudo mc git jq build-essential
+$STD apt-get install -y curl
+$STD apt-get install -y sudo
+$STD apt-get install -y mc
+$STD apt-get install -y curl 
+sudo mc git jq build-essential
 msg_ok "Installed Dependencies"
+
+motd_ssh
+customize
 
 # Prompt for TON Validator Account Variables
 msg_info "TON Validator Account Setup"
