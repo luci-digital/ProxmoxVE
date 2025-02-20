@@ -6,7 +6,7 @@
 
 REPO_URL="https://github.com/luci-digital/ProxmoxVE"
 INSTALL_DIR="/opt/proxmoxve-install"
-SCRIPT_NAME="install-ton-validator.sh"
+SCRIPT_NAME="ton-validator.sh"
 
 # Ensure necessary dependencies are installed
 apt-get install -y git >/dev/null 2>&1
