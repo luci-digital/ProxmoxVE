@@ -4,6 +4,29 @@
 # Author: Luci Digital
 # License: CC0-1.0 | https://github.com/luci-digital/ProxmoxVE/raw/main/LICENSE
 
+REPO_URL="https://github.com/luci-digital/ProxmoxVE"
+INSTALL_DIR="/opt/proxmoxve-install"
+SCRIPT_NAME="install-ton-validator.sh"
+
+# Ensure necessary dependencies are installed
+apt-get install -y git >/dev/null 2>&1
+
+# Clone or update the latest script from GitHub
+if [ ! -d "$INSTALL_DIR" ]; then
+    git clone "$REPO_URL" "$INSTALL_DIR"
+else
+    cd "$INSTALL_DIR" && git pull
+fi
+
+# Execute the latest version of the script
+exec bash "$INSTALL_DIR/install/$SCRIPT_NAME"
+
+#!/usr/bin/env bash
+
+# TON Validator Node Installation Script for Proxmox VE
+# Author: Luci Digital
+# License: CC0-1.0 | https://github.com/luci-digital/ProxmoxVE/raw/main/LICENSE
+
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
