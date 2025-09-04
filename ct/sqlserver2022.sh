@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Kristian Skov
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://www.microsoft.com/en-us/sql-server/sql-server-2022
 
 APP="SQL Server 2022"
-var_tags="sql"
-var_cpu="1"
-var_ram="2048"
-var_disk="10"
-var_os="ubuntu"
-var_version="22.04"
-var_unprivileged="0"
+var_tags="${var_tags:-sql}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-2048}"
+var_disk="${var_disk:-10}"
+var_os="${var_os:-ubuntu}"
+var_version="${var_version:-22.04}"
+var_unprivileged="${var_unprivileged:-0}"
 
 header_info "$APP"
 variables
@@ -28,8 +28,8 @@ function update_script() {
         exit
     fi
     msg_info "Updating ${APP} LXC"
-    apt-get update &>/dev/null
-    apt-get -y upgrade &>/dev/null
+    $STD apt-get update
+    $STD apt-get -y upgrade
     msg_ok "Updated Successfully"
     exit
 }

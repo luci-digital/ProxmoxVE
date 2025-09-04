@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://autobrr.com/
 
 APP="Autobrr"
-var_tags="arr;"
-var_cpu="2"
-var_ram="2048"
-var_disk="8"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-arr;}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-2048}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -20,29 +20,27 @@ color
 catch_errors
 
 function update_script() {
-    header_info
-    check_container_storage
-    check_container_resources
-    if [[ ! -f /root/.config/autobrr/config.toml ]]; then
-        msg_error "No ${APP} Installation Found!"
-        exit
-    fi
+  header_info
+  check_container_storage
+  check_container_resources
+  if [[ ! -f /root/.config/autobrr/config.toml ]]; then
+    msg_error "No ${APP} Installation Found!"
+    exit
+  fi
+
+  if check_for_gh_release "autobrr" "autobrr/autobrr"; then
     msg_info "Stopping ${APP} LXC"
-    systemctl stop autobrr.service
+    systemctl stop autobrr
     msg_ok "Stopped ${APP} LXC"
 
-    msg_info "Updating ${APP} LXC"
-    rm -rf /usr/local/bin/*
-    wget -q $(curl -s https://api.github.com/repos/autobrr/autobrr/releases/latest | grep download | grep linux_x86_64 | cut -d\" -f4)
-    tar -C /usr/local/bin -xzf autobrr*.tar.gz
-    rm -rf autobrr*.tar.gz
-    msg_ok "Updated ${APP} LXC"
+    fetch_and_deploy_gh_release "autobrr" "autobrr/autobrr" "prebuild" "latest" "/usr/local/bin" "autobrr_*_linux_x86_64.tar.gz"
 
     msg_info "Starting ${APP} LXC"
-    systemctl start autobrr.service
+    systemctl start autobrr
     msg_ok "Started ${APP} LXC"
     msg_ok "Updated Successfully"
-    exit
+  fi
+  exit
 }
 
 start

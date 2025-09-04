@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://uptime.kuma.pet/
 
 APP="Uptime Kuma"
-var_tags="analytics;monitoring"
-var_cpu="1"
-var_ram="1024"
-var_disk="4"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-analytics;monitoring}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-4}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,34 +27,27 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  if [[ "$(node -v | cut -d 'v' -f 2)" == "18."* ]]; then
-    if ! command -v npm >/dev/null 2>&1; then
-      echo "Installing NPM..."
-      apt-get install -y npm >/dev/null 2>&1
-      echo "Installed NPM..."
-    fi
+
+  NODE_VERSION="22" setup_nodejs
+
+  if check_for_gh_release "uptime-kuma" "louislam/uptime-kuma"; then
+    msg_info "Stopping ${APP}"
+    systemctl stop uptime-kuma
+    msg_ok "Stopped ${APP}"
+
+    fetch_and_deploy_gh_release "uptime-kuma" "louislam/uptime-kuma" "tarball"
+
+    msg_info "Updating ${APP}"
+    cd /opt/uptime-kuma
+    $STD npm install --omit dev
+    $STD npm run download-dist
+    msg_ok "Updated ${APP}"
+
+    msg_info "Starting ${APP}"
+    systemctl start uptime-kuma
+    msg_ok "Started ${APP}"
+    msg_ok "Updated Successfully"
   fi
-  LATEST=$(curl -sL https://api.github.com/repos/louislam/uptime-kuma/releases/latest | grep '"tag_name":' | cut -d'"' -f4)
-  msg_info "Stopping ${APP}"
-  sudo systemctl stop uptime-kuma &>/dev/null
-  msg_ok "Stopped ${APP}"
-
-  cd /opt/uptime-kuma
-
-  msg_info "Pulling ${APP} ${LATEST}"
-  git fetch --all &>/dev/null
-  git checkout $LATEST --force &>/dev/null
-  msg_ok "Pulled ${APP} ${LATEST}"
-
-  msg_info "Updating ${APP} to ${LATEST}"
-  npm install --production &>/dev/null
-  npm run download-dist &>/dev/null
-  msg_ok "Updated ${APP}"
-
-  msg_info "Starting ${APP}"
-  sudo systemctl start uptime-kuma &>/dev/null
-  msg_ok "Started ${APP}"
-  msg_ok "Updated Successfully"
   exit
 }
 

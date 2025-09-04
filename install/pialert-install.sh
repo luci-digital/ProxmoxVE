@@ -2,10 +2,10 @@
 
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
-# License: MIT
-# https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://github.com/leiweibau/Pi.Alert/
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -15,9 +15,6 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get -y install \
-  sudo \
-  mc \
-  curl \
   apt-utils \
   avahi-utils \
   lighttpd \
@@ -29,9 +26,11 @@ $STD apt-get -y install \
   nbtscan \
   libwww-perl \
   nmap \
-  zip \
   aria2 \
-  wakeonlan
+  wakeonlan \
+  fping \
+  zip \
+  libtext-csv-perl
 msg_ok "Installed Dependencies"
 
 msg_info "Installing PHP Dependencies"
@@ -51,16 +50,21 @@ $STD apt-get -y install \
   python3-pip \
   python3-requests \
   python3-tz \
-  python3-tzlocal
+  python3-tzlocal \
+  python3-aiohttp \
+  python3-cryptography
 rm -rf /usr/lib/python3.*/EXTERNALLY-MANAGED
 $STD pip3 install mac-vendor-lookup
 $STD pip3 install fritzconnection
 $STD pip3 install cryptography
 $STD pip3 install pyunifi
+$STD pip3 install openwrt-luci-rpc
+$STD pip3 install asusrouter
+$STD pip3 install paho-mqtt
 msg_ok "Installed Python Dependencies"
 
 msg_info "Installing Pi.Alert"
-curl -sL https://github.com/leiweibau/Pi.Alert/raw/main/tar/pialert_latest.tar | tar xvf - -C /opt >/dev/null 2>&1
+curl -fsSL https://github.com/leiweibau/Pi.Alert/raw/main/tar/pialert_latest.tar | tar xvf - -C /opt >/dev/null 2>&1
 rm -rf /var/lib/ieee-data /var/www/html/index.html
 sed -i -e 's#^sudo cp -n /usr/share/ieee-data/.* /var/lib/ieee-data/#\# &#' -e '/^sudo mkdir -p 2_backup$/s/^/# /' -e '/^sudo cp \*.txt 2_backup$/s/^/# /' -e '/^sudo cp \*.csv 2_backup$/s/^/# /' /opt/pialert/back/update_vendors.sh
 mv /var/www/html/index.lighttpd.html /var/www/html/index.lighttpd.html.old
@@ -74,7 +78,7 @@ touch /opt/pialert/log/pialert.vendors.log /opt/pialert/log/pialert.IP.log /opt/
 src_dir="/opt/pialert/log"
 dest_dir="/opt/pialert/front/php/server"
 for file in pialert.vendors.log pialert.IP.log pialert.1.log pialert.cleanup.log pialert.webservices.log; do
-    ln -s "$src_dir/$file" "$dest_dir/$file"
+  ln -s "$src_dir/$file" "$dest_dir/$file"
 done
 sed -i 's#PIALERT_PATH\s*=\s*'\''/home/pi/pialert'\''#PIALERT_PATH           = '\''/opt/pialert'\''#' /opt/pialert/config/pialert.conf
 sed -i 's/$HOME/\/opt/g' /opt/pialert/install/pialert.cron

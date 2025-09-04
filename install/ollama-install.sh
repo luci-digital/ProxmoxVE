@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 # Copyright (c) 2021-2025 tteck
-# Author: tteck
-# Co-Author: havardthom
-# License: MIT
-# https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Author: havardthom | Co-Author: MickLesk (CanbiZ)
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://ollama.com/
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -15,26 +14,10 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
-$STD apt-get install -y curl
-$STD apt-get install -y sudo
-$STD apt-get install -y mc
-$STD apt-get install -y gpg
-$STD apt-get install -y git
-$STD apt-get install -y build-essential
-$STD apt-get install -y pkg-config
-$STD apt-get install -y cmake
+$STD apt-get install -y \
+  build-essential \
+  pkg-config
 msg_ok "Installed Dependencies"
-
-msg_info "Installing Golang"
-set +o pipefail
-temp_file=$(mktemp)
-golang_tarball=$(curl -s https://go.dev/dl/ | grep -oP 'go[\d\.]+\.linux-amd64\.tar\.gz' | head -n 1)
-wget -q https://golang.org/dl/"$golang_tarball" -O "$temp_file"
-tar -C /usr/local -xzf "$temp_file"
-ln -sf /usr/local/go/bin/go /usr/local/bin/go
-rm -f "$temp_file"
-set -o pipefail
-msg_ok "Installed Golang"
 
 msg_info "Setting up Intel® Repositories"
 mkdir -p /etc/apt/keyrings
@@ -61,11 +44,35 @@ $STD apt-get install -y --no-install-recommends intel-basekit-2024.1
 msg_ok "Installed Intel® oneAPI Base Toolkit"
 
 msg_info "Installing Ollama (Patience)"
-$STD git clone https://github.com/ollama/ollama.git /opt/ollama
-cd /opt/ollama
-$STD go generate ./...
-$STD go build .
-msg_ok "Installed Ollama"
+RELEASE=$(curl -fsSL https://api.github.com/repos/ollama/ollama/releases/latest | grep "tag_name" | awk -F '"' '{print $4}')
+OLLAMA_INSTALL_DIR="/usr/local/lib/ollama"
+BINDIR="/usr/local/bin"
+mkdir -p $OLLAMA_INSTALL_DIR
+OLLAMA_URL="https://github.com/ollama/ollama/releases/download/${RELEASE}/ollama-linux-amd64.tgz"
+TMP_TAR="/tmp/ollama.tgz"
+echo -e "\n"
+if curl -fL# -o "$TMP_TAR" "$OLLAMA_URL"; then
+  if tar -xzf "$TMP_TAR" -C "$OLLAMA_INSTALL_DIR"; then
+    ln -sf "$OLLAMA_INSTALL_DIR/bin/ollama" "$BINDIR/ollama"
+    echo "${RELEASE}" >/opt/Ollama_version.txt
+    msg_ok "Installed Ollama ${RELEASE}"
+  else
+    msg_error "Extraction failed – archive corrupt or incomplete"
+    exit 1
+  fi
+else
+  msg_error "Download failed – $OLLAMA_URL not reachable"
+  exit 1
+fi
+
+msg_info "Creating ollama User and Group"
+if ! id ollama >/dev/null 2>&1; then
+  useradd -r -s /usr/sbin/nologin -U -m -d /usr/share/ollama ollama
+fi
+$STD usermod -aG render ollama || true
+$STD usermod -aG video ollama || true
+$STD usermod -aG ollama $(id -u -n)
+msg_ok "Created ollama User and adjusted Groups"
 
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/ollama.service
@@ -75,7 +82,7 @@ After=network-online.target
 
 [Service]
 Type=exec
-ExecStart=/opt/ollama/ollama serve
+ExecStart=/usr/local/bin/ollama serve
 Environment=HOME=$HOME
 Environment=OLLAMA_INTEL_GPU=true
 Environment=OLLAMA_HOST=0.0.0.0
@@ -88,7 +95,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable -q --now ollama.service
+systemctl enable -q --now ollama
 msg_ok "Created Service"
 
 motd_ssh

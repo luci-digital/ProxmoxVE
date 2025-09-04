@@ -5,62 +5,25 @@
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 
 variables() {
-  NSAPP=$(echo ${APP,,} | tr -d ' ') # This function sets the NSAPP variable by converting the value of the APP variable to lowercase and removing any spaces.
-  var_install="${NSAPP}-install"     # sets the var_install variable by appending "-install" to the value of NSAPP.
-  INTEGER='^[0-9]+([.][0-9]+)?$'     # it defines the INTEGER regular expression pattern.
-  PVEHOST_NAME=$(hostname)           # gets the Proxmox Hostname and sets it to Uppercase
-  DIAGNOSTICS="yes"                  # sets the DIAGNOSTICS variable to "yes", used for the API call.
-  METHOD="default"                   # sets the METHOD variable to "default", used for the API call.
+  NSAPP=$(echo "${APP,,}" | tr -d ' ')              # This function sets the NSAPP variable by converting the value of the APP variable to lowercase and removing any spaces.
+  var_install="${NSAPP}-install"                    # sets the var_install variable by appending "-install" to the value of NSAPP.
+  INTEGER='^[0-9]+([.][0-9]+)?$'                    # it defines the INTEGER regular expression pattern.
+  PVEHOST_NAME=$(hostname)                          # gets the Proxmox Hostname and sets it to Uppercase
+  DIAGNOSTICS="yes"                                 # sets the DIAGNOSTICS variable to "yes", used for the API call.
+  METHOD="default"                                  # sets the METHOD variable to "default", used for the API call.
   RANDOM_UUID="$(cat /proc/sys/kernel/random/uuid)" # generates a random UUID and sets it to the RANDOM_UUID variable.
+  CT_TYPE=${var_unprivileged:-$CT_TYPE}
 }
 
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/api.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/api.func)
 
-# This function sets various color variables using ANSI escape codes for formatting text in the terminal.
-color() {
-  # Colors
-  YW=$(echo "\033[33m")
-  YWB=$(echo "\033[93m")
-  BL=$(echo "\033[36m")
-  RD=$(echo "\033[01;31m")
-  BGN=$(echo "\033[4;92m")
-  GN=$(echo "\033[1;92m")
-  DGN=$(echo "\033[32m")
-
-  # Formatting
-  CL=$(echo "\033[m")
-  UL=$(echo "\033[4m")
-  BOLD=$(echo "\033[1m")
-  BFR="\\r\\033[K"
-  HOLD=" "
-  TAB="  "
-
-  # Icons
-  CM="${TAB}✔️${TAB}${CL}"
-  CROSS="${TAB}✖️${TAB}${CL}"
-  INFO="${TAB}💡${TAB}${CL}"
-  OS="${TAB}🖥️${TAB}${CL}"
-  OSVERSION="${TAB}🌟${TAB}${CL}"
-  CONTAINERTYPE="${TAB}📦${TAB}${CL}"
-  DISKSIZE="${TAB}💾${TAB}${CL}"
-  CPUCORE="${TAB}🧠${TAB}${CL}"
-  RAMSIZE="${TAB}🛠️${TAB}${CL}"
-  SEARCH="${TAB}🔍${TAB}${CL}"
-  VERIFYPW="${TAB}🔐${TAB}${CL}"
-  CONTAINERID="${TAB}🆔${TAB}${CL}"
-  HOSTNAME="${TAB}🏠${TAB}${CL}"
-  BRIDGE="${TAB}🌉${TAB}${CL}"
-  NETWORK="${TAB}📡${TAB}${CL}"
-  GATEWAY="${TAB}🌐${TAB}${CL}"
-  DISABLEIPV6="${TAB}🚫${TAB}${CL}"
-  DEFAULT="${TAB}⚙️${TAB}${CL}"
-  MACADDRESS="${TAB}🔗${TAB}${CL}"
-  VLANTAG="${TAB}🏷️${TAB}${CL}"
-  ROOTSSH="${TAB}🔑${TAB}${CL}"
-  CREATING="${TAB}🚀${TAB}${CL}"
-  ADVANCED="${TAB}🧩${TAB}${CL}"
-}
-
+if command -v curl >/dev/null 2>&1; then
+  source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/core.func)
+  load_functions
+elif command -v wget >/dev/null 2>&1; then
+  source <(wget -qO- https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/core.func)
+  load_functions
+fi
 # This function enables error handling in the script by setting options and defining a trap for the ERR signal.
 catch_errors() {
   set -Eeuo pipefail
@@ -69,55 +32,14 @@ catch_errors() {
 
 # This function is called when an error occurs. It receives the exit code, line number, and command that caused the error, and displays an error message.
 error_handler() {
-  source /dev/stdin <<< $(wget -qLO - https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/api.func)																															   
-  if [ -n "$SPINNER_PID" ] && ps -p $SPINNER_PID > /dev/null; then kill $SPINNER_PID > /dev/null; fi
+  source /dev/stdin <<<$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/api.func)
   printf "\e[?25h"
   local exit_code="$?"
   local line_number="$1"
   local command="$2"
   local error_message="${RD}[ERROR]${CL} in line ${RD}$line_number${CL}: exit code ${RD}$exit_code${CL}: while executing command ${YW}$command${CL}"
-  post_update_to_api "failed" "${command}"									  
+  post_update_to_api "failed" "${command}"
   echo -e "\n$error_message\n"
-}
-
-# This function displays a spinner.
-spinner() {
-  local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
-  local spin_i=0
-  local interval=0.1
-  printf "\e[?25l"
-
-  local color="${YWB}"
-
-  while true; do
-    printf "\r ${color}%s${CL}" "${frames[spin_i]}"
-    spin_i=$(( (spin_i + 1) % ${#frames[@]} ))
-    sleep "$interval"
-  done
-}
-
-# This function displays an informational message with a yellow color.
-msg_info() {
-  local msg="$1"
-  echo -ne "${TAB}${YW}${HOLD}${msg}${HOLD}"
-  spinner &
-  SPINNER_PID=$!
-}
-
-# This function displays a success message with a green color.
-msg_ok() {
-  if [ -n "$SPINNER_PID" ] && ps -p $SPINNER_PID > /dev/null; then kill $SPINNER_PID > /dev/null; fi
-  printf "\e[?25h"
-  local msg="$1"
-  echo -e "${BFR}${CM}${GN}${msg}${CL}"
-}
-
-# This function displays a error message with a red color.
-msg_error() {
-  if [ -n "$SPINNER_PID" ] && ps -p $SPINNER_PID > /dev/null; then kill $SPINNER_PID > /dev/null; fi
-  printf "\e[?25h"
-  local msg="$1"
-  echo -e "${BFR}${CROSS}${RD}${msg}${CL}"
 }
 
 # Check if the shell is using bash
@@ -143,14 +65,37 @@ root_check() {
 }
 
 # This function checks the version of Proxmox Virtual Environment (PVE) and exits if the version is not supported.
+# Supported: Proxmox VE 8.0.x – 8.9.x and 9.0 (NOT 9.1+)
 pve_check() {
-  if ! pveversion | grep -Eq "pve-manager/8\.[1-3](\.[0-9]+)*"; then
-    msg_error "${CROSS}${RD}This version of Proxmox Virtual Environment is not supported"
-    echo -e "Requires Proxmox Virtual Environment Version 8.1 or later."
-    echo -e "Exiting..."
-    sleep 2
-    exit
+  local PVE_VER
+  PVE_VER="$(pveversion | awk -F'/' '{print $2}' | awk -F'-' '{print $1}')"
+
+  # Check for Proxmox VE 8.x: allow 8.0–8.9
+  if [[ "$PVE_VER" =~ ^8\.([0-9]+) ]]; then
+    local MINOR="${BASH_REMATCH[1]}"
+    if ((MINOR < 0 || MINOR > 9)); then
+      msg_error "This version of Proxmox VE is not supported."
+      msg_error "Supported: Proxmox VE version 8.0 – 8.9"
+      exit 1
+    fi
+    return 0
   fi
+
+  # Check for Proxmox VE 9.x: allow ONLY 9.0
+  if [[ "$PVE_VER" =~ ^9\.([0-9]+) ]]; then
+    local MINOR="${BASH_REMATCH[1]}"
+    if ((MINOR != 0)); then
+      msg_error "This version of Proxmox VE is not yet supported."
+      msg_error "Supported: Proxmox VE version 9.0"
+      exit 1
+    fi
+    return 0
+  fi
+
+  # All other unsupported versions
+  msg_error "This version of Proxmox VE is not supported."
+  msg_error "Supported versions: Proxmox VE 8.0 – 8.x or 9.0"
+  exit 1
 }
 
 # When a node is running tens of containers, it's possible to exceed the kernel's cryptographic key storage allocations.
@@ -236,45 +181,8 @@ update_motd_ip() {
 
     IP=$(get_current_ip)
     # Add the new IP address
-    echo -e "${TAB}${NETWORK}${YW} IP Address: ${GN}${IP}${CL}" >> "$MOTD_FILE"
+    echo -e "${TAB}${NETWORK}${YW} IP Address: ${GN}${IP}${CL}" >>"$MOTD_FILE"
   fi
-}
-
-# Function to download & save header files
-get_header() {
-  local app_name=$(echo ${APP,,} | tr -d ' ') 
-  local header_url="https://github.com/community-scripts/ProxmoxVE/raw/main/ct/headers/${app_name}"
-  local local_header_path="/usr/local/community-scripts/headers/${app_name}"
-
-  mkdir -p "/usr/local/community-scripts/headers"
-
-  # Check if local file already present
-  if [ ! -f "$local_header_path" ]; then
-    wget -qO "$local_header_path" "$header_url"
-    if [ $? -ne 0 ]; then
-      echo -e "${WARN}${BOLD}${YLW}Failed to download header for ${app_name}. No header will be displayed.${CL}"
-      return 1
-    fi
-  fi
-  cat "$local_header_path"
-}
-
-# This function sets the APP-Name into an ASCII Header in Slant, figlet needed on proxmox main node.
-header_info() {
-  local app_name=$(echo ${APP,,} | tr -d ' ') 
-  local header_content
-
-  # Download & save Header-File locally
-  header_content=$(get_header "$app_name")
-  if [ $? -ne 0 ]; then
-    # Fallback: Doesn't show Header
-    return 0
-  fi
-
-  # Show ASCII-Header
-  term_width=$(tput cols 2>/dev/null || echo 120)
-  clear
-  echo "$header_content"
 }
 
 # This function checks if the script is running through SSH and prompts the user to confirm if they want to proceed or exit.
@@ -302,10 +210,11 @@ base_settings() {
   HN=$NSAPP
   BRG="vmbr0"
   NET="dhcp"
+  IPV6_METHOD="none"
+  IPV6_STATIC=""
   GATE=""
   APT_CACHER=""
   APT_CACHER_IP=""
-  DISABLEIP6="no"
   MTU=""
   SD=""
   NS=""
@@ -314,6 +223,8 @@ base_settings() {
   SSH="no"
   SSH_AUTHORIZED_KEY=""
   TAGS="community-script;"
+  ENABLE_FUSE="${1:-no}"
+  ENABLE_TUN="${1:-no}"
 
   # Override default settings with variables from ct script
   CT_TYPE=${var_unprivileged:-$CT_TYPE}
@@ -322,6 +233,8 @@ base_settings() {
   RAM_SIZE=${var_ram:-$RAM_SIZE}
   VERB=${var_verbose:-$VERBOSE}
   TAGS="${TAGS}${var_tags:-}"
+  ENABLE_FUSE="${var_fuse:-$ENABLE_FUSE}"
+  ENABLE_TUN="${var_tun:-$ENABLE_TUN}"
 
   # Since these 2 are only defined outside of default_settings function, we add a temporary fallback. TODO: To align everything, we should add these as constant variables (e.g. OSTYPE and OSVERSION), but that would currently require updating the default_settings function for all existing scripts
   if [ -z "$var_os" ]; then
@@ -329,6 +242,100 @@ base_settings() {
   fi
   if [ -z "$var_version" ]; then
     var_version="12"
+  fi
+}
+write_config() {
+  mkdir -p /opt/community-scripts
+  # This function writes the configuration to a file.
+  if whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "Write configfile" --yesno "Do you want to write the selections to a config file?" 10 60; then
+    FILEPATH="/opt/community-scripts/${NSAPP}.conf"
+    [[ "$GATE" =~ ",gw=" ]] && local GATE="${GATE##,gw=}"
+
+    # Strip prefixes from parameters for config file storage
+    local SD_VALUE="${SD}"
+    local NS_VALUE="${NS}"
+    local MAC_VALUE="${MAC}"
+    local VLAN_VALUE="${VLAN}"
+    [[ "$SD" =~ ^-searchdomain= ]] && SD_VALUE="${SD#-searchdomain=}"
+    [[ "$NS" =~ ^-nameserver= ]] && NS_VALUE="${NS#-nameserver=}"
+    [[ "$MAC" =~ ^,hwaddr= ]] && MAC_VALUE="${MAC#,hwaddr=}"
+    [[ "$VLAN" =~ ^,tag= ]] && VLAN_VALUE="${VLAN#,tag=}"
+
+    if [[ ! -f $FILEPATH ]]; then
+      cat <<EOF >"$FILEPATH"
+# ${NSAPP} Configuration File
+# Generated on $(date)
+
+CT_TYPE="${CT_TYPE}"
+DISK_SIZE="${DISK_SIZE}"
+CORE_COUNT="${CORE_COUNT}"
+RAM_SIZE="${RAM_SIZE}"
+VERBOSE="${VERBOSE}"
+PW="${PW##-password }"
+#CT_ID=$NEXTID
+HN="${HN}"
+BRG="${BRG}"
+NET="${NET}"
+IPV6_METHOD="${IPV6_METHOD:-none}"
+# Set this only if using "IPV6_METHOD=static"
+#IPV6STATIC="fd00::1234/64"
+
+GATE="${GATE:-none}"
+APT_CACHER_IP="${APT_CACHER_IP:-none}"
+MTU="${MTU:-1500}"
+SD="${SD_VALUE:-none}"
+NS="${NS_VALUE:-none}"
+MAC="${MAC_VALUE:-none}"
+VLAN="${VLAN_VALUE:-none}"
+SSH="${SSH}"
+SSH_AUTHORIZED_KEY="${SSH_AUTHORIZED_KEY}"
+TAGS="${TAGS:-none}"
+ENABLE_FUSE="$ENABLE_FUSE"
+ENABLE_TUN="$ENABLE_TUN"
+EOF
+
+      echo -e "${INFO}${BOLD}${GN}Writing configuration to ${FILEPATH}${CL}"
+    else
+      echo -e "${INFO}${BOLD}${RD}Configuration file already exists at ${FILEPATH}${CL}"
+      if whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "Overwrite configfile" --yesno "Do you want to overwrite the existing config file?" 10 60; then
+        rm -f "$FILEPATH"
+        cat <<EOF >"$FILEPATH"
+# ${NSAPP} Configuration File
+# Generated on $(date)
+
+CT_TYPE="${CT_TYPE}"
+DISK_SIZE="${DISK_SIZE}"
+CORE_COUNT="${CORE_COUNT}"
+RAM_SIZE="${RAM_SIZE}"
+VERBOSE="${VERBOSE}"
+PW="${PW##-password }"
+#CT_ID=$NEXTID
+HN="${HN}"
+BRG="${BRG}"
+NET="${NET}"
+IPV6_METHOD="${IPV6_METHOD:-none}"
+
+# Set this only if using "IPV6_METHOD=static"
+#IPV6STATIC="fd00::1234/64"
+
+GATE="${GATE:-none}"
+APT_CACHER_IP="${APT_CACHER_IP:-none}"
+MTU="${MTU:-1500}"
+SD="${SD_VALUE:-none}"
+NS="${NS_VALUE:-none}"
+MAC="${MAC_VALUE:-none}"
+VLAN="${VLAN_VALUE:-none}"
+SSH="${SSH}"
+SSH_AUTHORIZED_KEY="${SSH_AUTHORIZED_KEY}"
+TAGS="${TAGS:-none}"
+ENABLE_FUSE="$ENABLE_FUSE"
+ENABLE_TUN="$ENABLE_TUN"
+EOF
+        echo -e "${INFO}${BOLD}${GN}Writing configuration to ${FILEPATH}${CL}"
+      else
+        echo -e "${INFO}${BOLD}${RD}Configuration file not overwritten${CL}"
+      fi
+    fi
   fi
 }
 
@@ -341,13 +348,12 @@ echo_default() {
   fi
 
   # Output the selected values with icons
-  echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os${CL}"
-  echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
+  echo -e "${CONTAINERID}${BOLD}${DGN}Container ID: ${BGN}${CT_ID}${CL}"
+  echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os ($var_version)${CL}"
   echo -e "${CONTAINERTYPE}${BOLD}${DGN}Container Type: ${BGN}$CT_TYPE_DESC${CL}"
   echo -e "${DISKSIZE}${BOLD}${DGN}Disk Size: ${BGN}${DISK_SIZE} GB${CL}"
   echo -e "${CPUCORE}${BOLD}${DGN}CPU Cores: ${BGN}${CORE_COUNT}${CL}"
   echo -e "${RAMSIZE}${BOLD}${DGN}RAM Size: ${BGN}${RAM_SIZE} MiB${CL}"
-  echo -e "${CONTAINERID}${BOLD}${DGN}Container ID: ${BGN}${CT_ID}${CL}"
   if [ "$VERB" == "yes" ]; then
     echo -e "${SEARCH}${BOLD}${DGN}Verbose Mode: ${BGN}Enabled${CL}"
   fi
@@ -365,128 +371,6 @@ exit_script() {
 # This function allows the user to configure advanced settings for the script.
 advanced_settings() {
   whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox --title "Here is an instructional tip:" "To make a selection, use the Spacebar." 8 58
-  whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox --title "Default distribution for $APP" "Default is: ${var_os} ${var_version} \n \nIf the default Linux distribution is not adhered to, script support will be discontinued. \n" 10 58
-  if [ "$var_os" != "alpine" ]; then
-    var_default_os="${var_os}"
-    var_os=""
-    while [ -z "$var_os" ]; do
-      if [ "$var_default_os" == "debian" ]; then
-        if var_os=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DISTRIBUTION" --radiolist "Choose Distribution" 10 58 2 \
-          "debian" "" ON \
-          "ubuntu" "" OFF \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_os" ]; then
-            echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os${CL}"
-          fi
-        else
-          exit_script
-        fi
-      fi
-      if [ "$var_default_os" == "ubuntu" ]; then
-        if var_os=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DISTRIBUTION" --radiolist "Choose Distribution" 10 58 2 \
-          "debian" "" OFF \
-          "ubuntu" "" ON \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_os" ]; then
-            echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os${CL}"
-          fi
-        else
-          exit_script
-        fi
-      fi
-    done
-  fi
-
-  if [ "$var_os" == "debian" ]; then
-    var_default_version="${var_version}"
-    var_version=""
-    while [ -z "$var_version" ]; do
-      if [ "$var_default_version" == "11" ]; then
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DEBIAN VERSION" --radiolist "Choose Version" 10 58 2 \
-          "11" "Bullseye" ON \
-          "12" "Bookworm" OFF \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      fi
-      if [ "$var_default_version" == "12" ]; then
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "DEBIAN VERSION" --radiolist "Choose Version" 10 58 2 \
-          "11" "Bullseye" OFF \
-          "12" "Bookworm" ON \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      fi
-    done
-  fi
-
-  if [ "$var_os" == "ubuntu" ]; then
-    var_default_version="${var_version}"
-    var_version=""
-    while [ -z "$var_version" ]; do
-      if [ "$var_default_version" == "20.04" ]; then
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "UBUNTU VERSION" --radiolist "Choose Version" 10 58 4 \
-          "20.04" "Focal" ON \
-          "22.04" "Jammy" OFF \
-          "24.04" "Noble" OFF \
-          "24.10" "Oracular" OFF \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      elif [ "$var_default_version" == "22.04" ]; then
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "UBUNTU VERSION" --radiolist "Choose Version" 10 58 4 \
-          "20.04" "Focal" OFF \
-          "22.04" "Jammy" ON \
-          "24.04" "Noble" OFF \
-          "24.10" "Oracular" OFF \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      elif [ "$var_default_version" == "24.04" ]; then
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "UBUNTU VERSION" --radiolist "Choose Version" 10 58 4 \
-          "20.04" "Focal" OFF \
-          "22.04" "Jammy" OFF \
-          "24.04" "Noble" ON \
-          "24.10" "Oracular" OFF \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      else
-        if var_version=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "UBUNTU VERSION" --radiolist "Choose Version" 10 58 4 \
-          "20.04" "Focal" OFF \
-          "22.04" "Jammy" OFF \
-          "24.04" "Noble" OFF \
-          "24.10" "Oracular" ON \
-          3>&1 1>&2 2>&3); then
-          if [ -n "$var_version" ]; then
-            echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
-          fi
-        else
-          exit_script
-        fi
-      fi
-    done
-  fi
   # Setting Default Tag for Advanced Settings
   TAGS="community-script;${var_tags:-}"
   CT_DEFAULT_TYPE="${CT_TYPE}"
@@ -502,6 +386,8 @@ advanced_settings() {
           if [ "$CT_TYPE" -eq 0 ]; then
             CT_TYPE_DESC="Privileged"
           fi
+          echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os${CL}"
+          echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
           echo -e "${CONTAINERTYPE}${BOLD}${DGN}Container Type: ${BGN}$CT_TYPE_DESC${CL}"
         fi
       else
@@ -518,6 +404,8 @@ advanced_settings() {
           if [ "$CT_TYPE" -eq 0 ]; then
             CT_TYPE_DESC="Privileged"
           fi
+          echo -e "${OS}${BOLD}${DGN}Operating System: ${BGN}$var_os${CL}"
+          echo -e "${OSVERSION}${BOLD}${DGN}Version: ${BGN}$var_version${CL}"
           echo -e "${CONTAINERTYPE}${BOLD}${DGN}Container Type: ${BGN}$CT_TYPE_DESC${CL}"
         fi
       else
@@ -528,36 +416,44 @@ advanced_settings() {
 
   while true; do
     if PW1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --passwordbox "\nSet Root Password (needed for root ssh access)" 9 58 --title "PASSWORD (leave blank for automatic login)" 3>&1 1>&2 2>&3); then
-      if [[ ! -z "$PW1" ]]; then
-        if [[ "$PW1" == *" "* ]]; then
-          whiptail --msgbox "Password cannot contain spaces. Please try again." 8 58
-        elif [ ${#PW1} -lt 5 ]; then
-          whiptail --msgbox "Password must be at least 5 characters long. Please try again." 8 58
-        else
-          if PW2=$(whiptail --backtitle "Proxmox VE Helper Scripts" --passwordbox "\nVerify Root Password" 9 58 --title "PASSWORD VERIFICATION" 3>&1 1>&2 2>&3); then
-            if [[ "$PW1" == "$PW2" ]]; then
-              PW="-password $PW1"
-              echo -e "${VERIFYPW}${BOLD}${DGN}Root Password: ${BGN}********${CL}"
-              break
-            else
-              whiptail --msgbox "Passwords do not match. Please try again." 8 58
-            fi
-          else
-            exit_script
-          fi
-        fi
-      else
-        PW1="Automatic Login"
+      # Empty = Autologin
+      if [[ -z "$PW1" ]]; then
         PW=""
+        PW1="Automatic Login"
         echo -e "${VERIFYPW}${BOLD}${DGN}Root Password: ${BGN}$PW1${CL}"
         break
+      fi
+
+      # Invalid: contains spaces
+      if [[ "$PW1" == *" "* ]]; then
+        whiptail --msgbox "Password cannot contain spaces." 8 58
+        continue
+      fi
+
+      # Invalid: too short
+      if ((${#PW1} < 5)); then
+        whiptail --msgbox "Password must be at least 5 characters." 8 58
+        continue
+      fi
+
+      # Confirm password
+      if PW2=$(whiptail --backtitle "Proxmox VE Helper Scripts" --passwordbox "\nVerify Root Password" 9 58 --title "PASSWORD VERIFICATION" 3>&1 1>&2 2>&3); then
+        if [[ "$PW1" == "$PW2" ]]; then
+          PW="-password $PW1"
+          echo -e "${VERIFYPW}${BOLD}${DGN}Root Password: ${BGN}********${CL}"
+          break
+        else
+          whiptail --msgbox "Passwords do not match. Please try again." 8 58
+        fi
+      else
+        exit_script
       fi
     else
       exit_script
     fi
   done
 
-  if CT_ID=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Container ID" 8 58 $NEXTID --title "CONTAINER ID" 3>&1 1>&2 2>&3); then
+  if CT_ID=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Container ID" 8 58 "$NEXTID" --title "CONTAINER ID" 3>&1 1>&2 2>&3); then
     if [ -z "$CT_ID" ]; then
       CT_ID="$NEXTID"
       echo -e "${CONTAINERID}${BOLD}${DGN}Container ID: ${BGN}$CT_ID${CL}"
@@ -565,105 +461,243 @@ advanced_settings() {
       echo -e "${CONTAINERID}${BOLD}${DGN}Container ID: ${BGN}$CT_ID${CL}"
     fi
   else
-    exit
-  fi
-
-  if CT_NAME=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Hostname" 8 58 $NSAPP --title "HOSTNAME" 3>&1 1>&2 2>&3); then
-    if [ -z "$CT_NAME" ]; then
-      HN="$NSAPP"
-    else
-      HN=$(echo ${CT_NAME,,} | tr -d ' ')
-    fi
-    echo -e "${HOSTNAME}${BOLD}${DGN}Hostname: ${BGN}$HN${CL}"
-  else
-    exit_script
-  fi
-
-  if DISK_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Disk Size in GB" 8 58 $var_disk --title "DISK SIZE" 3>&1 1>&2 2>&3); then
-    if [ -z "$DISK_SIZE" ]; then
-      DISK_SIZE="$var_disk"
-      echo -e "${DISKSIZE}${BOLD}${DGN}Disk Size: ${BGN}${DISK_SIZE} GB${CL}"
-    else
-      if ! [[ $DISK_SIZE =~ $INTEGER ]]; then
-        echo -e "{INFO}${HOLD}${RD} DISK SIZE MUST BE AN INTEGER NUMBER!${CL}"
-        advanced_settings
-      fi
-      echo -e "${DISKSIZE}${BOLD}${DGN}Disk Size: ${BGN}${DISK_SIZE} GB${CL}"
-    fi
-  else
-    exit_script
-  fi
-
-  if CORE_COUNT=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Allocate CPU Cores" 8 58 $var_cpu --title "CORE COUNT" 3>&1 1>&2 2>&3); then
-    if [ -z "$CORE_COUNT" ]; then
-      CORE_COUNT="$var_cpu"
-      echo -e "${CPUCORE}${BOLD}${DGN}CPU Cores: ${BGN}$CORE_COUNT${CL}"
-    else
-      echo -e "${CPUCORE}${BOLD}${DGN}CPU Cores: ${BGN}$CORE_COUNT${CL}"
-    fi
-  else
-    exit_script
-  fi
-
-  if RAM_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Allocate RAM in MiB" 8 58 $var_ram --title "RAM" 3>&1 1>&2 2>&3); then
-    if [ -z "$RAM_SIZE" ]; then
-      RAM_SIZE="$var_ram"
-      echo -e "${RAMSIZE}${BOLD}${DGN}RAM Size: ${BGN}${RAM_SIZE} MiB${CL}"
-    else
-      echo -e "${RAMSIZE}${BOLD}${DGN}RAM Size: ${BGN}${RAM_SIZE} MiB${CL}"
-    fi
-  else
-    exit_script
-  fi
-
-  if BRG=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a Bridge" 8 58 vmbr0 --title "BRIDGE" 3>&1 1>&2 2>&3); then
-    if [ -z "$BRG" ]; then
-      BRG="vmbr0"
-      echo -e "${BRIDGE}${BOLD}${DGN}Bridge: ${BGN}$BRG${CL}"
-    else
-      echo -e "${BRIDGE}${BOLD}${DGN}Bridge: ${BGN}$BRG${CL}"
-    fi
-  else
     exit_script
   fi
 
   while true; do
-    NET=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a Static IPv4 CIDR Address (/24)" 8 58 dhcp --title "IP ADDRESS" 3>&1 1>&2 2>&3)
-    exit_status=$?
-    if [ $exit_status -eq 0 ]; then
-      if [ "$NET" = "dhcp" ]; then
-        echo -e "${NETWORK}${BOLD}${DGN}IP Address: ${BGN}$NET${CL}"
+    if CT_NAME=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Hostname" 8 58 "$NSAPP" --title "HOSTNAME" 3>&1 1>&2 2>&3); then
+      if [ -z "$CT_NAME" ]; then
+        HN="$NSAPP"
+      else
+        HN=$(echo "${CT_NAME,,}" | tr -d ' ')
+      fi
+      # Hostname validate (RFC 1123)
+      if [[ "$HN" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
+        echo -e "${HOSTNAME}${BOLD}${DGN}Hostname: ${BGN}$HN${CL}"
         break
       else
-        if [[ "$NET" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$ ]]; then
-          echo -e "${NETWORK}${BOLD}${DGN}IP Address: ${BGN}$NET${CL}"
-          break
-        else
-          whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox "$NET is an invalid IPv4 CIDR address. Please enter a valid IPv4 CIDR address or 'dhcp'" 8 58
-        fi
+        whiptail --backtitle "Proxmox VE Helper Scripts" \
+          --msgbox "❌ Invalid hostname: '$HN'\n\nOnly lowercase letters, digits and hyphens (-) are allowed.\nUnderscores (_) or other characters are not permitted!" 10 70
       fi
     else
       exit_script
     fi
   done
 
-  if [ "$NET" != "dhcp" ]; then
-    while true; do
-      GATE1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Enter gateway IP address" 8 58 --title "Gateway IP" 3>&1 1>&2 2>&3)
-      if [ -z "$GATE1" ]; then
-        whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox "Gateway IP address cannot be empty" 8 58
-      elif [[ ! "$GATE1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-        whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox "Invalid IP address format" 8 58
-      else
-        GATE=",gw=$GATE1"
-        echo -e "${GATEWAY}${BOLD}${DGN}Gateway IP Address: ${BGN}$GATE1${CL}"
-        break
-      fi
-    done
+  while true; do
+    DISK_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Disk Size in GB" 8 58 "$var_disk" --title "DISK SIZE" 3>&1 1>&2 2>&3) || exit_script
+
+    if [ -z "$DISK_SIZE" ]; then
+      DISK_SIZE="$var_disk"
+    fi
+
+    if [[ "$DISK_SIZE" =~ ^[1-9][0-9]*$ ]]; then
+      echo -e "${DISKSIZE}${BOLD}${DGN}Disk Size: ${BGN}${DISK_SIZE} GB${CL}"
+      break
+    else
+      whiptail --msgbox "Disk size must be a positive integer!" 8 58
+    fi
+  done
+
+  while true; do
+    CORE_COUNT=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+      --inputbox "Allocate CPU Cores" 8 58 "$var_cpu" --title "CORE COUNT" 3>&1 1>&2 2>&3) || exit_script
+
+    if [ -z "$CORE_COUNT" ]; then
+      CORE_COUNT="$var_cpu"
+    fi
+
+    if [[ "$CORE_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+      echo -e "${CPUCORE}${BOLD}${DGN}CPU Cores: ${BGN}$CORE_COUNT${CL}"
+      break
+    else
+      whiptail --msgbox "CPU core count must be a positive integer!" 8 58
+    fi
+  done
+
+  while true; do
+    RAM_SIZE=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+      --inputbox "Allocate RAM in MiB" 8 58 "$var_ram" --title "RAM" 3>&1 1>&2 2>&3) || exit_script
+
+    if [ -z "$RAM_SIZE" ]; then
+      RAM_SIZE="$var_ram"
+    fi
+
+    if [[ "$RAM_SIZE" =~ ^[1-9][0-9]*$ ]]; then
+      echo -e "${RAMSIZE}${BOLD}${DGN}RAM Size: ${BGN}${RAM_SIZE} MiB${CL}"
+      break
+    else
+      whiptail --msgbox "RAM size must be a positive integer!" 8 58
+    fi
+  done
+
+  BRIDGES=""
+  IFACE_FILEPATH_LIST="/etc/network/interfaces"$'\n'$(find "/etc/network/interfaces.d/" -type f)
+  OLD_IFS=$IFS
+  IFS=$'\n'
+
+  for iface_filepath in ${IFACE_FILEPATH_LIST}; do
+    iface_indexes_tmpfile=$(mktemp -q -u '.iface-XXXX')
+
+    (grep -Pn '^\s*iface' "${iface_filepath}" | cut -d':' -f1 && wc -l "${iface_filepath}" | cut -d' ' -f1) |
+      awk 'FNR==1 {line=$0; next} {print line":"$0-1; line=$0}' >"${iface_indexes_tmpfile}" || true
+
+    if [ -f "${iface_indexes_tmpfile}" ]; then
+      while read -r pair; do
+        start=$(echo "${pair}" | cut -d':' -f1)
+        end=$(echo "${pair}" | cut -d':' -f2)
+
+        if awk "NR >= ${start} && NR <= ${end}" "${iface_filepath}" | grep -qP '^\s*(bridge[-_](ports|stp|fd|vlan-aware|vids)|ovs_type\s+OVSBridge)\b'; then
+          iface_name=$(sed "${start}q;d" "${iface_filepath}" | awk '{print $2}')
+          BRIDGES="${iface_name}"$'\n'"${BRIDGES}"
+        fi
+
+      done <"${iface_indexes_tmpfile}"
+      rm -f "${iface_indexes_tmpfile}"
+    fi
+
+  done
+
+  IFS=$OLD_IFS
+
+  BRIDGES=$(echo "$BRIDGES" | grep -v '^\s*$' | sort | uniq)
+
+  if [[ -z "$BRIDGES" ]]; then
+    BRG="vmbr0"
+    echo -e "${BRIDGE}${BOLD}${DGN}Bridge: ${BGN}$BRG${CL}"
   else
-    GATE=""
-    echo -e "${GATEWAY}${BOLD}${DGN}Gateway IP Address: ${BGN}Default${CL}"
+    BRG=$(whiptail --backtitle "Proxmox VE Helper Scripts" --menu "Select network bridge:" 15 40 6 $(echo "$BRIDGES" | awk '{print $0, "Bridge"}') 3>&1 1>&2 2>&3)
+    if [ -z "$BRG" ]; then
+      exit_script
+    else
+      echo -e "${BRIDGE}${BOLD}${DGN}Bridge: ${BGN}$BRG${CL}"
+    fi
   fi
+
+  # IPv4 methods: dhcp, static, none
+  while true; do
+    IPV4_METHOD=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+      --title "IPv4 Address Management" \
+      --menu "Select IPv4 Address Assignment Method:" 12 60 2 \
+      "dhcp" "Automatic (DHCP, recommended)" \
+      "static" "Static (manual entry)" \
+      3>&1 1>&2 2>&3)
+
+    exit_status=$?
+    if [ $exit_status -ne 0 ]; then
+      exit_script
+    fi
+
+    case "$IPV4_METHOD" in
+    dhcp)
+      NET="dhcp"
+      GATE=""
+      echo -e "${NETWORK}${BOLD}${DGN}IPv4: DHCP${CL}"
+      break
+      ;;
+    static)
+      # Static: call and validate CIDR address
+      while true; do
+        NET=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+          --inputbox "Enter Static IPv4 CIDR Address (e.g. 192.168.100.50/24)" 8 58 "" \
+          --title "IPv4 ADDRESS" 3>&1 1>&2 2>&3)
+        if [ -z "$NET" ]; then
+          whiptail --msgbox "IPv4 address must not be empty." 8 58
+          continue
+        elif [[ "$NET" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$ ]]; then
+          echo -e "${NETWORK}${BOLD}${DGN}IPv4 Address: ${BGN}$NET${CL}"
+          break
+        else
+          whiptail --msgbox "$NET is not a valid IPv4 CIDR address. Please enter a correct value!" 8 58
+        fi
+      done
+
+      # call and validate Gateway
+      while true; do
+        GATE1=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+          --inputbox "Enter Gateway IP address for static IPv4" 8 58 "" \
+          --title "Gateway IP" 3>&1 1>&2 2>&3)
+        if [ -z "$GATE1" ]; then
+          whiptail --msgbox "Gateway IP address cannot be empty." 8 58
+        elif [[ ! "$GATE1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+          whiptail --msgbox "Invalid Gateway IP address format." 8 58
+        else
+          GATE=",gw=$GATE1"
+          echo -e "${GATEWAY}${BOLD}${DGN}Gateway IP Address: ${BGN}$GATE1${CL}"
+          break
+        fi
+      done
+      break
+      ;;
+    esac
+  done
+
+  # IPv6 Address Management selection
+  while true; do
+    IPV6_METHOD=$(whiptail --backtitle "Proxmox VE Helper Scripts" --menu \
+      "Select IPv6 Address Management Type:" 15 58 4 \
+      "auto" "SLAAC/AUTO (recommended, default)" \
+      "dhcp" "DHCPv6" \
+      "static" "Static (manual entry)" \
+      "none" "Disabled" \
+      --default-item "auto" 3>&1 1>&2 2>&3)
+    [ $? -ne 0 ] && exit_script
+
+    case "$IPV6_METHOD" in
+    auto)
+      echo -e "${NETWORK}${BOLD}${DGN}IPv6: ${BGN}SLAAC/AUTO${CL}"
+      IPV6_ADDR=""
+      IPV6_GATE=""
+      break
+      ;;
+    dhcp)
+      echo -e "${NETWORK}${BOLD}${DGN}IPv6: ${BGN}DHCPv6${CL}"
+      IPV6_ADDR="dhcp"
+      IPV6_GATE=""
+      break
+      ;;
+    static)
+      # Ask for static IPv6 address (CIDR notation, e.g., 2001:db8::1234/64)
+      while true; do
+        IPV6_ADDR=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox \
+          "Set a static IPv6 CIDR address (e.g., 2001:db8::1234/64)" 8 58 "" \
+          --title "IPv6 STATIC ADDRESS" 3>&1 1>&2 2>&3) || exit_script
+        if [[ "$IPV6_ADDR" =~ ^([0-9a-fA-F:]+:+)+[0-9a-fA-F]+(/[0-9]{1,3})$ ]]; then
+          echo -e "${NETWORK}${BOLD}${DGN}IPv6 Address: ${BGN}$IPV6_ADDR${CL}"
+          break
+        else
+          whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox \
+            "$IPV6_ADDR is an invalid IPv6 CIDR address. Please enter a valid IPv6 CIDR address (e.g., 2001:db8::1234/64)" 8 58
+        fi
+      done
+      # Optional: ask for IPv6 gateway for static config
+      while true; do
+        IPV6_GATE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox \
+          "Enter IPv6 gateway address (optional, leave blank for none)" 8 58 "" --title "IPv6 GATEWAY" 3>&1 1>&2 2>&3)
+        if [ -z "$IPV6_GATE" ]; then
+          IPV6_GATE=""
+          break
+        elif [[ "$IPV6_GATE" =~ ^([0-9a-fA-F:]+:+)+[0-9a-fA-F]+$ ]]; then
+          break
+        else
+          whiptail --backtitle "Proxmox VE Helper Scripts" --msgbox \
+            "Invalid IPv6 gateway format." 8 58
+
+        fi
+      done
+      break
+      ;;
+    none)
+      echo -e "${NETWORK}${BOLD}${DGN}IPv6: ${BGN}Disabled${CL}"
+      IPV6_ADDR="none"
+      IPV6_GATE=""
+      break
+      ;;
+    *)
+      exit_script
+      ;;
+    esac
+  done
 
   if [ "$var_os" == "alpine" ]; then
     APT_CACHER=""
@@ -677,15 +711,8 @@ advanced_settings() {
     fi
   fi
 
-  if (whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "IPv6" --yesno "Disable IPv6?" 10 58); then
-    DISABLEIP6="yes"
-  else
-    DISABLEIP6="no"
-  fi
-  echo -e "${DISABLEIPV6}${BOLD}${DGN}Disable IPv6: ${BGN}$DISABLEIP6${CL}"
-
-  if MTU1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Interface MTU Size (leave blank for default [1500])" 8 58 --title "MTU SIZE" 3>&1 1>&2 2>&3); then
-    if [ -z $MTU1 ]; then
+  if MTU1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Interface MTU Size (leave blank for default [The MTU of your selected vmbr, default is 1500])" 8 58 --title "MTU SIZE" 3>&1 1>&2 2>&3); then
+    if [ -z "$MTU1" ]; then
       MTU1="Default"
       MTU=""
     else
@@ -697,7 +724,7 @@ advanced_settings() {
   fi
 
   if SD=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a DNS Search Domain (leave blank for HOST)" 8 58 --title "DNS Search Domain" 3>&1 1>&2 2>&3); then
-    if [ -z $SD ]; then
+    if [ -z "$SD" ]; then
       SX=Host
       SD=""
     else
@@ -710,7 +737,7 @@ advanced_settings() {
   fi
 
   if NX=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a DNS Server IP (leave blank for HOST)" 8 58 --title "DNS SERVER IP" 3>&1 1>&2 2>&3); then
-    if [ -z $NX ]; then
+    if [ -z "$NX" ]; then
       NX=Host
       NS=""
     else
@@ -722,7 +749,7 @@ advanced_settings() {
   fi
 
   if MAC1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a MAC Address(leave blank for generated MAC)" 8 58 --title "MAC ADDRESS" 3>&1 1>&2 2>&3); then
-    if [ -z $MAC1 ]; then
+    if [ -z "$MAC1" ]; then
       MAC1="Default"
       MAC=""
     else
@@ -734,7 +761,7 @@ advanced_settings() {
   fi
 
   if VLAN1=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set a Vlan(leave blank for no VLAN)" 8 58 --title "VLAN" 3>&1 1>&2 2>&3); then
-    if [ -z $VLAN1 ]; then
+    if [ -z "$VLAN1" ]; then
       VLAN1="Default"
       VLAN=""
     else
@@ -745,7 +772,7 @@ advanced_settings() {
     exit_script
   fi
 
-  if ADV_TAGS=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Custom Tags?[If you remove all, there will be no tags!]" 8 58 ${TAGS} --title "Advanced Tags" 3>&1 1>&2 2>&3); then
+  if ADV_TAGS=$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "Set Custom Tags?[If you remove all, there will be no tags!]" 8 58 "${TAGS}" --title "Advanced Tags" 3>&1 1>&2 2>&3); then
     if [ -n "${ADV_TAGS}" ]; then
       ADV_TAGS=$(echo "$ADV_TAGS" | tr -d '[:space:]')
       TAGS="${ADV_TAGS}"
@@ -757,7 +784,13 @@ advanced_settings() {
     exit_script
   fi
 
-  if [[ "$PW" == -password* ]]; then
+  SSH_AUTHORIZED_KEY="$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "SSH Authorized key for root (leave empty for none)" 8 58 --title "SSH Key" 3>&1 1>&2 2>&3)"
+
+  if [[ -z "${SSH_AUTHORIZED_KEY}" ]]; then
+    SSH_AUTHORIZED_KEY=""
+  fi
+
+  if [[ "$PW" == -password* || -n "$SSH_AUTHORIZED_KEY" ]]; then
     if (whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "SSH ACCESS" --yesno "Enable Root SSH Access?" 10 58); then
       SSH="yes"
     else
@@ -769,24 +802,52 @@ advanced_settings() {
     echo -e "${ROOTSSH}${BOLD}${DGN}Root SSH Access: ${BGN}$SSH${CL}"
   fi
 
-  if [[ "${SSH}" == "yes" ]]; then
-    SSH_AUTHORIZED_KEY="$(whiptail --backtitle "Proxmox VE Helper Scripts" --inputbox "SSH Authorized key for root (leave empty for none)" 8 58 --title "SSH Key" 3>&1 1>&2 2>&3)"
+  if (whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "FUSE Support" --yesno "Enable FUSE support?\nRequired for tools like rclone, mergerfs, AppImage, etc." 10 58); then
+    ENABLE_FUSE="yes"
+  else
+    ENABLE_FUSE="no"
+  fi
+  echo -e "${FUSE}${BOLD}${DGN}Enable FUSE Support: ${BGN}$ENABLE_FUSE${CL}"
 
-    if [[ -z "${SSH_AUTHORIZED_KEY}" ]]; then
-      echo "Warning: No SSH key provided."
-    fi
-  else
-    SSH_AUTHORIZED_KEY=""
-  fi
   if (whiptail --backtitle "Proxmox VE Helper Scripts" --defaultno --title "VERBOSE MODE" --yesno "Enable Verbose Mode?" 10 58); then
-    VERB="yes"
+    VERBOSE="yes"
   else
-    VERB="no"
+    VERBOSE="no"
   fi
-  echo -e "${SEARCH}${BOLD}${DGN}Verbose Mode: ${BGN}$VERB${CL}"
+  echo -e "${SEARCH}${BOLD}${DGN}Verbose Mode: ${BGN}$VERBOSE${CL}"
 
   if (whiptail --backtitle "Proxmox VE Helper Scripts" --title "ADVANCED SETTINGS COMPLETE" --yesno "Ready to create ${APP} LXC?" 10 58); then
     echo -e "${CREATING}${BOLD}${RD}Creating a ${APP} LXC using the above advanced settings${CL}"
+
+    # Strip prefixes from DNS parameters for config file storage
+    local SD_VALUE="$SD"
+    local NS_VALUE="$NS"
+    local MAC_VALUE="$MAC"
+    local VLAN_VALUE="$VLAN"
+    [[ "$SD" =~ ^-searchdomain= ]] && SD_VALUE="${SD#-searchdomain=}"
+    [[ "$NS" =~ ^-nameserver= ]] && NS_VALUE="${NS#-nameserver=}"
+    [[ "$MAC" =~ ^,hwaddr= ]] && MAC_VALUE="${MAC#,hwaddr=}"
+    [[ "$VLAN" =~ ^,tag= ]] && VLAN_VALUE="${VLAN#,tag=}"
+
+    # Temporarily store original values
+    local SD_ORIG="$SD"
+    local NS_ORIG="$NS"
+    local MAC_ORIG="$MAC"
+    local VLAN_ORIG="$VLAN"
+
+    # Set clean values for config file writing
+    SD="$SD_VALUE"
+    NS="$NS_VALUE"
+    MAC="$MAC_VALUE"
+    VLAN="$VLAN_VALUE"
+
+    write_config
+
+    # Restore original formatted values for container creation
+    SD="$SD_ORIG"
+    NS="$NS_ORIG"
+    MAC="$MAC_ORIG"
+    VLAN="$VLAN_ORIG"
   else
     clear
     header_info
@@ -795,14 +856,14 @@ advanced_settings() {
   fi
 }
 
-diagnostics_check(){
+diagnostics_check() {
   if ! [ -d "/usr/local/community-scripts" ]; then
-      mkdir -p /usr/local/community-scripts
-    fi
+    mkdir -p /usr/local/community-scripts
+  fi
 
-    if ! [ -f "/usr/local/community-scripts/diagnostics" ]; then
-      if (whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS" --yesno "Send Diagnostics of LXC Installation?\n\n(This only transmits data without user data, just RAM, CPU, LXC name, ...)" 10 58); then
-          cat <<EOF>/usr/local/community-scripts/diagnostics
+  if ! [ -f "/usr/local/community-scripts/diagnostics" ]; then
+    if (whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS" --yesno "Send Diagnostics of LXC Installation?\n\n(This only transmits data without user data, just RAM, CPU, LXC name, ...)" 10 58); then
+      cat <<EOF >/usr/local/community-scripts/diagnostics
 DIAGNOSTICS=yes
 
 #This file is used to store the diagnostics settings for the Community-Scripts API.
@@ -820,7 +881,6 @@ DIAGNOSTICS=yes
 #"ram_size"
 #"os_type"
 #"os_version"
-#"disableip6"
 #"nsapp"
 #"method"
 #"pve_version"
@@ -847,7 +907,6 @@ DIAGNOSTICS=no
 #"ram_size"
 #"os_type"
 #"os_version"
-#"disableip6"
 #"nsapp"
 #"method"
 #"pve_version"
@@ -880,35 +939,40 @@ install_script() {
   header_info
   while true; do
 
-    CHOICE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "SETTINGS" --menu "Choose an option:" \
-      12 50 5 \
+    TMP_CHOICE=$(whiptail --backtitle "Proxmox VE Helper Scripts" \
+      --title "SETTINGS" \
+      --menu "Choose an option:" 20 60 6 \
       "1" "Default Settings" \
       "2" "Default Settings (with verbose)" \
       "3" "Advanced Settings" \
-      "4" "Diagnostic Settings" \
-      "5" "Exit" --nocancel --default-item "1" 3>&1 1>&2 2>&3)
+      "4" "Use Config File" \
+      "5" "Diagnostic Settings" \
+      "6" "Exit" \
+      --default-item "1" 3>&1 1>&2 2>&3) || true
 
-    if [ $? -ne 0 ]; then
-      echo -e "${CROSS}${RD} Menu canceled. Exiting.${CL}"
+    if [ -z "$TMP_CHOICE" ]; then
+      echo -e "\n${CROSS}${RD}Menu canceled. Exiting script.${CL}\n"
       exit 0
     fi
+
+    CHOICE="$TMP_CHOICE"
 
     case $CHOICE in
     1)
       header_info
       echo -e "${DEFAULT}${BOLD}${BL}Using Default Settings on node $PVEHOST_NAME${CL}"
-      VERB="no"
+      VERBOSE="no"
       METHOD="default"
-      base_settings "$VERB"
+      base_settings "$VERBOSE"
       echo_default
       break
       ;;
     2)
       header_info
-      echo -e "${DEFAULT}${BOLD}${BL}Using Default Settings on node $PVEHOST_NAME (${SEARCH}Verbose)${CL}"
-      VERB="yes"
+      echo -e "${DEFAULT}${BOLD}${BL}Using Default Settings on node $PVEHOST_NAME (${VERBOSE_CROPPED}Verbose)${CL}"
+      VERBOSE="yes"
       METHOD="default"
-      base_settings "$VERB"
+      base_settings "$VERBOSE"
       echo_default
       break
       ;;
@@ -920,29 +984,38 @@ install_script() {
       advanced_settings
       break
       ;;
-     4)
-        if [[ $DIAGNOSTICS == "yes" ]]; then
-          if whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --yesno "Send Diagnostics of LXC Installation?\n\nCurrent setting: ${DIAGNOSTICS}" 10 58 \
-          --yes-button "No" --no-button "Back" ; then
-            DIAGNOSTICS="no"
-            sed -i 's/^DIAGNOSTICS=.*/DIAGNOSTICS=no/' /usr/local/community-scripts/diagnostics
-            whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --msgbox "Diagnostics settings changed to ${DIAGNOSTICS}." 8 58
-          fi
-        else
-          if whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --yesno "Send Diagnostics of LXC Installation?\n\nCurrent setting: ${DIAGNOSTICS}" 10 58 \
-          --yes-button "Yes" --no-button "Back" ; then
-            DIAGNOSTICS="yes"
-            sed -i 's/^DIAGNOSTICS=.*/DIAGNOSTICS=yes/' /usr/local/community-scripts/diagnostics
-            whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --msgbox "Diagnostics settings changed to ${DIAGNOSTICS}." 8 58
-          fi
-        fi        
-        ;;
+    4)
+      header_info
+      echo -e "${INFO}${HOLD} ${GN}Using Config File on node $PVEHOST_NAME${CL}"
+      METHOD="config_file"
+      source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/config-file.func)
+      config_file
+      break
+      ;;
     5)
-      echo -e "${CROSS}${RD}Exiting.${CL}"
+      if [[ $DIAGNOSTICS == "yes" ]]; then
+        if whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --yesno "Send Diagnostics of LXC Installation?\n\nCurrent setting: ${DIAGNOSTICS}" 10 58 \
+          --yes-button "No" --no-button "Back"; then
+          DIAGNOSTICS="no"
+          sed -i 's/^DIAGNOSTICS=.*/DIAGNOSTICS=no/' /usr/local/community-scripts/diagnostics
+          whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --msgbox "Diagnostics settings changed to ${DIAGNOSTICS}." 8 58
+        fi
+      else
+        if whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --yesno "Send Diagnostics of LXC Installation?\n\nCurrent setting: ${DIAGNOSTICS}" 10 58 \
+          --yes-button "Yes" --no-button "Back"; then
+          DIAGNOSTICS="yes"
+          sed -i 's/^DIAGNOSTICS=.*/DIAGNOSTICS=yes/' /usr/local/community-scripts/diagnostics
+          whiptail --backtitle "Proxmox VE Helper Scripts" --title "DIAGNOSTICS SETTINGS" --msgbox "Diagnostics settings changed to ${DIAGNOSTICS}." 8 58
+        fi
+      fi
+
+      ;;
+    6)
+      echo -e "\n${CROSS}${RD}Script terminated. Have a great day!${CL}\n"
       exit 0
       ;;
     *)
-      echo -e "${CROSS}${RD}Invalid option, please try again.${CL}"
+      echo -e "\n${CROSS}${RD}Invalid option, please try again.${CL}\n"
       ;;
     esac
   done
@@ -957,10 +1030,9 @@ check_container_resources() {
   if [[ "$current_ram" -lt "$var_ram" ]] || [[ "$current_cpu" -lt "$var_cpu" ]]; then
     echo -e "\n${INFO}${HOLD} ${GN}Required: ${var_cpu} CPU, ${var_ram}MB RAM ${CL}| ${RD}Current: ${current_cpu} CPU, ${current_ram}MB RAM${CL}"
     echo -e "${YWB}Please ensure that the ${APP} LXC is configured with at least ${var_cpu} vCPU and ${var_ram} MB RAM for the build process.${CL}\n"
-    echo -ne "${INFO}${HOLD} May cause data loss! ${INFO} Continue update with under-provisioned LXC? <yes/No>  "
+    echo -ne "${INFO}${HOLD} May cause data loss! ${INFO} Continue update with under-provisioned LXC? [y/N] "
     read -r prompt
-    # Check if the input is 'yes', otherwise exit with status 1
-    if [[ ! ${prompt,,} =~ ^(yes)$ ]]; then
+    if [[ ! "${prompt,,}" =~ ^(y|yes)$ ]]; then
       echo -e "${CROSS}${HOLD} ${YWB}Exiting based on user input.${CL}"
       exit 1
     fi
@@ -973,14 +1045,13 @@ check_container_storage() {
   # Check if the /boot partition is more than 80% full
   total_size=$(df /boot --output=size | tail -n 1)
   local used_size=$(df /boot --output=used | tail -n 1)
-  usage=$(( 100 * used_size / total_size ))
-  if (( usage > 80 )); then
+  usage=$((100 * used_size / total_size))
+  if ((usage > 80)); then
     # Prompt the user for confirmation to continue
     echo -e "${INFO}${HOLD} ${YWB}Warning: Storage is dangerously low (${usage}%).${CL}"
-    echo -ne "Continue anyway? <y/N>  "
+    echo -ne "Continue anyway? [y/N] "
     read -r prompt
-    # Check if the input is 'y' or 'yes', otherwise exit with status 1
-    if [[ ! ${prompt,,} =~ ^(y|yes)$ ]]; then
+    if [[ ! "${prompt,,}" =~ ^(y|yes)$ ]]; then
       echo -e "${CROSS}${HOLD}${YWB}Exiting based on user input.${CL}"
       exit 1
     fi
@@ -988,35 +1059,58 @@ check_container_storage() {
 }
 
 start() {
+  source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/tools.func)
   if command -v pveversion >/dev/null 2>&1; then
-    if ! (whiptail --backtitle "Proxmox VE Helper Scripts" --title "${APP} LXC" --yesno "This will create a New ${APP} LXC. Proceed?" 10 58); then
-      clear
-      exit_script
-      exit
-    fi
-    SPINNER_PID=""
     install_script
-  fi
+  else
+    CHOICE=$(whiptail --backtitle "Proxmox VE Helper Scripts" --title "${APP} LXC Update/Setting" --menu \
+      "Support/Update functions for ${APP} LXC. Choose an option:" \
+      12 60 3 \
+      "1" "YES (Silent Mode)" \
+      "2" "YES (Verbose Mode)" \
+      "3" "NO (Cancel Update)" --nocancel --default-item "1" 3>&1 1>&2 2>&3)
 
-  if ! command -v pveversion >/dev/null 2>&1; then
-    if ! (whiptail --backtitle "Proxmox VE Helper Scripts" --title "${APP} LXC UPDATE" --yesno "Support/Update functions for ${APP} LXC.  Proceed?" 10 58); then
+    case "$CHOICE" in
+    1)
+      VERBOSE="no"
+      set_std_mode
+      ;;
+    2)
+      VERBOSE="yes"
+      set_std_mode
+      ;;
+    3)
       clear
       exit_script
       exit
-    fi
-    SPINNER_PID=""
+      ;;
+    esac
     update_script
   fi
 }
 
 # This function collects user settings and integrates all the collected information.
 build_container() {
-  #  if [ "$VERB" == "yes" ]; then set -x; fi
+  #  if [ "$VERBOSE" == "yes" ]; then set -x; fi
 
+  NET_STRING="-net0 name=eth0,bridge=$BRG$MAC,ip=$NET$GATE$VLAN$MTU"
+  case "$IPV6_METHOD" in
+  auto) NET_STRING="$NET_STRING,ip6=auto" ;;
+  dhcp) NET_STRING="$NET_STRING,ip6=dhcp" ;;
+  static)
+    NET_STRING="$NET_STRING,ip6=$IPV6_ADDR"
+    [ -n "$IPV6_GATE" ] && NET_STRING="$NET_STRING,gw6=$IPV6_GATE"
+    ;;
+  none) ;;
+  esac
   if [ "$CT_TYPE" == "1" ]; then
     FEATURES="keyctl=1,nesting=1"
   else
     FEATURES="nesting=1"
+  fi
+
+  if [ "$ENABLE_FUSE" == "yes" ]; then
+    FEATURES="$FEATURES,fuse=1"
   fi
 
   if [[ $DIAGNOSTICS == "yes" ]]; then
@@ -1024,25 +1118,28 @@ build_container() {
   fi
 
   TEMP_DIR=$(mktemp -d)
-  pushd $TEMP_DIR >/dev/null
+  pushd "$TEMP_DIR" >/dev/null
   if [ "$var_os" == "alpine" ]; then
-    export FUNCTIONS_FILE_PATH="$(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/alpine-install.func)"
+    export FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/alpine-install.func)"
   else
-    export FUNCTIONS_FILE_PATH="$(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)"
+    export FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)"
   fi
+
+  export DIAGNOSTICS="$DIAGNOSTICS"
   export RANDOM_UUID="$RANDOM_UUID"
   export CACHER="$APT_CACHER"
   export CACHER_IP="$APT_CACHER_IP"
   export tz="$timezone"
-  export DISABLEIPV6="$DISABLEIP6"
   export APPLICATION="$APP"
   export app="$NSAPP"
   export PASSWORD="$PW"
-  export VERBOSE="$VERB"
+  export VERBOSE="$VERBOSE"
   export SSH_ROOT="${SSH}"
   export SSH_AUTHORIZED_KEY
   export CTID="$CT_ID"
   export CTTYPE="$CT_TYPE"
+  export ENABLE_FUSE="$ENABLE_FUSE"
+  export ENABLE_TUN="$ENABLE_TUN"
   export PCT_OSTYPE="$var_os"
   export PCT_OSVERSION="$var_version"
   export PCT_DISK_SIZE="$DISK_SIZE"
@@ -1052,7 +1149,7 @@ build_container() {
     -tags $TAGS
     $SD
     $NS
-    -net0 name=eth0,bridge=$BRG$MAC,ip=$NET$GATE$VLAN$MTU
+    $NET_STRING
     -onboot 1
     -cores $CORE_COUNT
     -memory $RAM_SIZE
@@ -1060,11 +1157,13 @@ build_container() {
     $PW
   "
   # This executes create_lxc.sh and creates the container and .conf file
-  bash -c "$(wget -qLO - https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/create_lxc.sh)" || exit $?
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/create_lxc.sh)" $?
 
-  LXC_CONFIG=/etc/pve/lxc/${CTID}.conf
+  LXC_CONFIG="/etc/pve/lxc/${CTID}.conf"
+
+  # USB passthrough for privileged LXC (CT_TYPE=0)
   if [ "$CT_TYPE" == "0" ]; then
-    cat <<EOF >>$LXC_CONFIG
+    cat <<EOF >>"$LXC_CONFIG"
 # USB passthrough
 lxc.cgroup2.devices.allow: a
 lxc.cap.drop:
@@ -1078,52 +1177,180 @@ lxc.mount.entry: /dev/ttyACM1       dev/ttyACM1       none bind,optional,create=
 EOF
   fi
 
-  if [ "$CT_TYPE" == "0" ]; then
-    if [[ "$APP" == "Channels" || "$APP" == "Emby" || "$APP" == "ErsatzTV" || "$APP" == "Frigate" || "$APP" == "Jellyfin" || "$APP" == "Plex" || "$APP" == "Scrypted" || "$APP" == "Tdarr" || "$APP" == "Unmanic" || "$APP" == "Ollama" ]]; then
-      cat <<EOF >>$LXC_CONFIG
-# VAAPI hardware transcoding
-lxc.cgroup2.devices.allow: c 226:0 rwm
-lxc.cgroup2.devices.allow: c 226:128 rwm
-lxc.cgroup2.devices.allow: c 29:0 rwm
-lxc.mount.entry: /dev/fb0 dev/fb0 none bind,optional,create=file
-lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
-lxc.mount.entry: /dev/dri/renderD128 dev/dri/renderD128 none bind,optional,create=file
-EOF
+  # VAAPI passthrough for privileged containers or known apps
+  VAAPI_APPS=(
+    "immich"
+    "Channels"
+    "Emby"
+    "ErsatzTV"
+    "Frigate"
+    "Jellyfin"
+    "Plex"
+    "Scrypted"
+    "Tdarr"
+    "Unmanic"
+    "Ollama"
+    "FileFlows"
+    "Open WebUI"
+  )
+
+  is_vaapi_app=false
+  for vaapi_app in "${VAAPI_APPS[@]}"; do
+    if [[ "$APP" == "$vaapi_app" ]]; then
+      is_vaapi_app=true
+      break
     fi
-  else
-    if [[ "$APP" == "Channels" || "$APP" == "Emby" || "$APP" == "ErsatzTV" || "$APP" == "Frigate" || "$APP" == "Jellyfin" || "$APP" == "Plex" || "$APP" == "Scrypted" || "$APP" == "Tdarr" || "$APP" == "Unmanic" || "$APP" == "Ollama" ]]; then
-      if [[ -e "/dev/dri/renderD128" ]]; then
-        if [[ -e "/dev/dri/card0" ]]; then
-          cat <<EOF >>$LXC_CONFIG
-# VAAPI hardware transcoding
-dev0: /dev/dri/card0,gid=44
-dev1: /dev/dri/renderD128,gid=104
-EOF
-        else
-          cat <<EOF >>$LXC_CONFIG
-# VAAPI hardware transcoding
-dev0: /dev/dri/card1,gid=44
-dev1: /dev/dri/renderD128,gid=104
-EOF
-        fi
+  done
+
+  if ([ "$CT_TYPE" == "0" ] || [ "$is_vaapi_app" == "true" ]) &&
+    ([[ -e /dev/dri/renderD128 ]] || [[ -e /dev/dri/card0 ]] || [[ -e /dev/fb0 ]]); then
+
+    echo ""
+    msg_custom "⚙️ " "\e[96m" "Configuring VAAPI passthrough for LXC container"
+    if [ "$CT_TYPE" != "0" ]; then
+      msg_custom "⚠️ " "\e[33m" "Container is unprivileged – VAAPI passthrough may not work without additional host configuration (e.g., idmap)."
+    fi
+    msg_custom "ℹ️ " "\e[96m" "VAAPI enables GPU hardware acceleration (e.g., for video transcoding in Jellyfin or Plex)."
+    echo ""
+    read -rp "➤ Automatically mount all available VAAPI devices? [Y/n]: " VAAPI_ALL
+
+    if [[ "$VAAPI_ALL" =~ ^[Yy]$|^$ ]]; then
+      if [ "$CT_TYPE" == "0" ]; then
+        # PRV Container → alles zulässig
+        [[ -e /dev/dri/renderD128 ]] && {
+          echo "lxc.cgroup2.devices.allow: c 226:128 rwm" >>"$LXC_CONFIG"
+          echo "lxc.mount.entry: /dev/dri/renderD128 dev/dri/renderD128 none bind,optional,create=file" >>"$LXC_CONFIG"
+        }
+        [[ -e /dev/dri/card0 ]] && {
+          echo "lxc.cgroup2.devices.allow: c 226:0 rwm" >>"$LXC_CONFIG"
+          echo "lxc.mount.entry: /dev/dri/card0 dev/dri/card0 none bind,optional,create=file" >>"$LXC_CONFIG"
+        }
+        [[ -e /dev/fb0 ]] && {
+          echo "lxc.cgroup2.devices.allow: c 29:0 rwm" >>"$LXC_CONFIG"
+          echo "lxc.mount.entry: /dev/fb0 dev/fb0 none bind,optional,create=file" >>"$LXC_CONFIG"
+        }
+        [[ -d /dev/dri ]] && {
+          echo "lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir" >>"$LXC_CONFIG"
+        }
+      else
+        # UNPRV Container → nur devX für UI
+        [[ -e /dev/dri/card0 ]] && echo "dev0: /dev/dri/card0,gid=44" >>"$LXC_CONFIG"
+        [[ -e /dev/dri/card1 ]] && echo "dev0: /dev/dri/card1,gid=44" >>"$LXC_CONFIG"
+        [[ -e /dev/dri/renderD128 ]] && echo "dev1: /dev/dri/renderD128,gid=104" >>"$LXC_CONFIG"
       fi
     fi
+
+  fi
+  if [ "$CT_TYPE" == "1" ] && [ "$is_vaapi_app" == "true" ]; then
+    if [[ -e /dev/dri/card0 ]]; then
+      echo "dev0: /dev/dri/card0,gid=44" >>"$LXC_CONFIG"
+    elif [[ -e /dev/dri/card1 ]]; then
+      echo "dev0: /dev/dri/card1,gid=44" >>"$LXC_CONFIG"
+    fi
+    if [[ -e /dev/dri/renderD128 ]]; then
+      echo "dev1: /dev/dri/renderD128,gid=104" >>"$LXC_CONFIG"
+    fi
+  fi
+
+  # TUN device passthrough
+  if [ "$ENABLE_TUN" == "yes" ]; then
+    cat <<EOF >>"$LXC_CONFIG"
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file
+EOF
   fi
 
   # This starts the container and executes <app>-install.sh
   msg_info "Starting LXC Container"
   pct start "$CTID"
-  msg_ok "Started LXC Container"
+
+  # wait for status 'running'
+  for i in {1..10}; do
+    if pct status "$CTID" | grep -q "status: running"; then
+      msg_ok "Started LXC Container"
+      break
+    fi
+    sleep 1
+    if [ "$i" -eq 10 ]; then
+      msg_error "LXC Container did not reach running state"
+      exit 1
+    fi
+  done
+
+  if [ "$var_os" != "alpine" ]; then
+    msg_info "Waiting for network in LXC container"
+    for i in {1..10}; do
+      # 1. Primary check: ICMP ping (fastest, but may be blocked by ISP/firewall)
+      if pct exec "$CTID" -- ping -c1 -W1 deb.debian.org >/dev/null 2>&1; then
+        msg_ok "Network in LXC is reachable (ping)"
+        break
+      fi
+      # Wait and retry if not reachable yet
+      if [ "$i" -lt 10 ]; then
+        msg_warn "No network in LXC yet (try $i/10) – waiting..."
+        sleep 3
+      else
+        # After 10 unsuccessful ping attempts, try HTTP connectivity via wget as fallback
+        msg_warn "Ping failed 10 times. Trying HTTP connectivity check (wget) as fallback..."
+        if pct exec "$CTID" -- wget -q --spider http://deb.debian.org; then
+          msg_ok "Network in LXC is reachable (wget fallback)"
+        else
+          msg_error "No network in LXC after all checks."
+          read -r -p "Set fallback DNS (1.1.1.1/8.8.8.8)? [y/N]: " choice
+          case "$choice" in
+          [yY]*)
+            pct set "$CTID" --nameserver 1.1.1.1
+            pct set "$CTID" --nameserver 8.8.8.8
+            # Final attempt with wget after DNS change
+            if pct exec "$CTID" -- wget -q --spider http://deb.debian.org; then
+              msg_ok "Network reachable after DNS fallback"
+            else
+              msg_error "Still no network/DNS in LXC! Aborting customization."
+              exit_script
+            fi
+            ;;
+          *)
+            msg_error "Aborted by user – no DNS fallback set."
+            exit_script
+            ;;
+          esac
+        fi
+        break
+      fi
+    done
+  fi
+
+  msg_info "Customizing LXC Container"
+  : "${tz:=Etc/UTC}"
   if [ "$var_os" == "alpine" ]; then
     sleep 3
     pct exec "$CTID" -- /bin/sh -c 'cat <<EOF >/etc/apk/repositories
 http://dl-cdn.alpinelinux.org/alpine/latest-stable/main
 http://dl-cdn.alpinelinux.org/alpine/latest-stable/community
 EOF'
-    pct exec "$CTID" -- ash -c "apk add bash >/dev/null"
-  fi
-  lxc-attach -n "$CTID" -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/$var_install.sh)" || exit $?
+    pct exec "$CTID" -- ash -c "apk add bash newt curl openssh nano mc ncurses jq >/dev/null"
+  else
+    sleep 3
+    pct exec "$CTID" -- bash -c "sed -i '/$LANG/ s/^# //' /etc/locale.gen"
+    pct exec "$CTID" -- bash -c "locale_line=\$(grep -v '^#' /etc/locale.gen | grep -E '^[a-zA-Z]' | awk '{print \$1}' | head -n 1) && \
+    echo LANG=\$locale_line >/etc/default/locale && \
+    locale-gen >/dev/null && \
+    export LANG=\$locale_line"
 
+    if [[ -z "${tz:-}" ]]; then
+      tz=$(timedatectl show --property=Timezone --value 2>/dev/null || echo "Etc/UTC")
+    fi
+    if pct exec "$CTID" -- test -e "/usr/share/zoneinfo/$tz"; then
+      pct exec "$CTID" -- bash -c "tz='$tz'; echo \"\$tz\" >/etc/timezone && ln -sf \"/usr/share/zoneinfo/\$tz\" /etc/localtime"
+    else
+      msg_warn "Skipping timezone setup – zone '$tz' not found in container"
+    fi
+
+    pct exec "$CTID" -- bash -c "apt-get update >/dev/null && apt-get install -y sudo curl mc gnupg2 jq >/dev/null"
+  fi
+  msg_ok "Customized LXC Container"
+
+  lxc-attach -n "$CTID" -- bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/${var_install}.sh)"
 }
 
 # This function sets the description of the container.
@@ -1145,7 +1372,7 @@ description() {
       <img src='https://img.shields.io/badge/&#x2615;-Buy us a coffee-blue' alt='spend Coffee' />
     </a>
   </p>
-  
+
   <span style='margin: 0 10px;'>
     <i class="fa fa-github fa-fw" style="color: #f5f5f5;"></i>
     <a href='https://github.com/community-scripts/ProxmoxVE' target='_blank' rel='noopener noreferrer' style='text-decoration: none; color: #00617f;'>GitHub</a>
@@ -1168,36 +1395,37 @@ EOF
   if [[ -f /etc/systemd/system/ping-instances.service ]]; then
     systemctl start ping-instances.service
   fi
-  
+
   post_update_to_api "done" "none"
 }
 
-
-exit_script() {
-  exit_code=$?  # Capture the exit status of the last executed command
+api_exit_script() {
+  exit_code=$? # Capture the exit status of the last executed command
   #200 exit codes indicate error in create_lxc.sh
   #100 exit codes indicate error in install.func
 
-if [ $exit_code -ne 0 ]; then  # Check if exit code is nonzero
+  if [ $exit_code -ne 0 ]; then
     case $exit_code in
-        200) post_update_to_api "failed" "create_lxc.sh: Error during LXC creation" ;;
-        201) post_update_to_api "failed" "create_lxc.sh Invalid Storage class" ;;
-        202) post_update_to_api "failed" "create_lxc.sh Invalid Menu aborted" ;;
-        203) post_update_to_api "failed" "create_lxc.sh CTID was unset" ;;
-        204) post_update_to_api "failed" "create_lxc.sh PCT_OSTYPE was unset" ;;
-        205) post_update_to_api "failed" "create_lxc.sh ID cannot be less than 100" ;;
-        206) post_update_to_api "failed" "create_lxc.sh ID already in use" ;;
-        207) post_update_to_api "failed" "create_lxc.sh Template not found" ;;
-        208) post_update_to_api "failed" "create_lxc.sh Error downloading template" ;;
-        101) post_update_to_api "failed" "create_lxc.sh No Network connection" ;;
-        *)   post_update_to_api "failed" "Unknown error, exit code: $exit_code" ;;
+    100) post_update_to_api "failed" "100: Unexpected error in create_lxc.sh" ;;
+    101) post_update_to_api "failed" "101: No network connection detected in create_lxc.sh" ;;
+    200) post_update_to_api "failed" "200: LXC creation failed in create_lxc.sh" ;;
+    201) post_update_to_api "failed" "201: Invalid Storage class in create_lxc.sh" ;;
+    202) post_update_to_api "failed" "202: User aborted menu in create_lxc.sh" ;;
+    203) post_update_to_api "failed" "203: CTID not set in create_lxc.sh" ;;
+    204) post_update_to_api "failed" "204: PCT_OSTYPE not set in create_lxc.sh" ;;
+    205) post_update_to_api "failed" "205: CTID cannot be less than 100 in create_lxc.sh" ;;
+    206) post_update_to_api "failed" "206: CTID already in use in create_lxc.sh" ;;
+    207) post_update_to_api "failed" "207: Template not found in create_lxc.sh" ;;
+    208) post_update_to_api "failed" "208: Error downloading template in create_lxc.sh" ;;
+    209) post_update_to_api "failed" "209: Container creation failed, but template is intact in create_lxc.sh" ;;
+    *) post_update_to_api "failed" "Unknown error, exit code: $exit_code in create_lxc.sh" ;;
     esac
-fi
+  fi
 }
 
-
-trap 'exit_script' EXIT
+if command -v pveversion >/dev/null 2>&1; then
+  trap 'api_exit_script' EXIT
+fi
 trap 'post_update_to_api "failed" "$BASH_COMMAND"' ERR
-trap 'post_update_to_api "failed" "INTERRUPTED"' SIGINT 
+trap 'post_update_to_api "failed" "INTERRUPTED"' SIGINT
 trap 'post_update_to_api "failed" "TERMINATED"' SIGTERM
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: MickLesk (Canbiz)
 # License: MIT
@@ -7,13 +7,13 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # Source: https://nextpvr.com/
 
 APP="NextPVR"
-var_tags="pvr"
-var_cpu="1"
-var_ram="1024"
-var_disk="5"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-pvr}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-5}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -33,14 +33,14 @@ function update_script() {
     msg_ok "Stopped ${APP}"
 
     msg_info "Updating LXC packages"
-    apt-get update &>/dev/null
-    apt-get -y upgrade &>/dev/null
+    $STD apt-get update
+    $STD apt-get -y upgrade
     msg_ok "Updated LXC packages"
 
     msg_info "Updating ${APP}"
     cd /opt
-    wget -q https://nextpvr.com/nextpvr-helper.deb
-    dpkg -i nextpvr-helper.deb &>/dev/null
+    curl -fsSL "https://nextpvr.com/nextpvr-helper.deb" -o $(basename "https://nextpvr.com/nextpvr-helper.deb")
+    $STD dpkg -i nextpvr-helper.deb
     msg_ok "Updated ${APP}"
 
     msg_info "Starting ${APP}"

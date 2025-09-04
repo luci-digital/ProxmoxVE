@@ -2,8 +2,8 @@
 
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
-# License: MIT
-# https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://nginxproxymanager.com/
 
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
@@ -16,13 +16,6 @@ update_os
 msg_info "Installing Dependencies"
 $STD apt-get update
 $STD apt-get -y install \
-  sudo \
-  mc \
-  curl \
-  gnupg \
-  make \
-  gcc \
-  g++ \
   ca-certificates \
   apache2-utils \
   logrotate \
@@ -39,15 +32,14 @@ $STD apt-get install -y \
   python3-cffi \
   python3-certbot \
   python3-certbot-dns-cloudflare
-$STD pip3 install certbot-dns-multi
+$STD pip3 install --break-system-packages certbot-dns-multi
 $STD python3 -m venv /opt/certbot/
-rm -rf /usr/lib/python3.*/EXTERNALLY-MANAGED
 msg_ok "Installed Python Dependencies"
 
 VERSION="$(awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release)"
 
 msg_info "Installing Openresty"
-wget -qO - https://openresty.org/package/pubkey.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty-archive-keyring.gpg
+curl -fsSL "https://openresty.org/package/pubkey.gpg" | gpg --dearmor -o /etc/apt/trusted.gpg.d/openresty-archive-keyring.gpg
 echo -e "deb http://openresty.org/package/debian bullseye openresty" >/etc/apt/sources.list.d/openresty.list
 $STD apt-get update
 $STD apt-get -y install openresty
@@ -64,20 +56,20 @@ msg_info "Installing pnpm"
 $STD npm install -g pnpm@8.15
 msg_ok "Installed pnpm"
 
-RELEASE=$(curl -s https://api.github.com/repos/NginxProxyManager/nginx-proxy-manager/releases/latest |
+RELEASE=$(curl -fsSL https://api.github.com/repos/NginxProxyManager/nginx-proxy-manager/releases/latest |
   grep "tag_name" |
   awk '{print substr($2, 3, length($2)-4) }')
 
-read -r -p "Would you like to install an older version (v2.10.4)? <y/N> " prompt
+read -r -p "${TAB3}Would you like to install an older version (v2.10.4)? <y/N> " prompt
 if [[ ${prompt,,} =~ ^(y|yes)$ ]]; then
   msg_info "Downloading Nginx Proxy Manager v2.10.4"
-  wget -q https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v2.10.4 -O - | tar -xz
+  curl -fsSL "https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v2.10.4" | tar -xz
   cd ./nginx-proxy-manager-2.10.4
   msg_ok "Downloaded Nginx Proxy Manager v2.10.4"
 else
   msg_info "Downloading Nginx Proxy Manager v${RELEASE}"
-  wget -q https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v${RELEASE} -O - | tar -xz
-  cd ./nginx-proxy-manager-${RELEASE}
+  curl -fsSL "https://codeload.github.com/NginxProxyManager/nginx-proxy-manager/tar.gz/v${RELEASE}" | tar -xz
+  cd ./nginx-proxy-manager-"${RELEASE}"
   msg_ok "Downloaded Nginx Proxy Manager v${RELEASE}"
 fi
 msg_info "Setting up Environment"
@@ -92,8 +84,6 @@ else
   sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" backend/package.json
   sed -i "s|\"version\": \"0.0.0\"|\"version\": \"$RELEASE\"|" frontend/package.json
 fi
-sed -i 's|"fork-me": ".*"|"fork-me": "Proxmox VE Helper-Scripts"|' frontend/js/i18n/messages.json
-sed -i "s|https://github.com.*source=nginx-proxy-manager|https://helper-scripts.com|g" frontend/js/app/ui/footer/main.ejs
 sed -i 's+^daemon+#daemon+g' docker/rootfs/etc/nginx/nginx.conf
 NGINX_CONFS=$(find "$(pwd)" -type f -name "*.conf")
 for NGINX_CONF in $NGINX_CONFS; do
@@ -137,7 +127,7 @@ fi
 mkdir -p /app/global /app/frontend/images
 cp -r backend/* /app
 cp -r global/* /app/global
-msg_ok "Set up Enviroment"
+msg_ok "Set up Environment"
 
 msg_info "Building Frontend"
 cd ./frontend

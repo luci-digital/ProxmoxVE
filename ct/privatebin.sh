@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Nícolas Pastorello (opastorello)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://privatebin.info/
 
 APP="PrivateBin"
-var_tags="paste;secure"
-var_cpu="1"
-var_ram="1024"
-var_disk="4"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-paste;secure}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-4}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,24 +27,22 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/PrivateBin/PrivateBin/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
-  if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
-    msg_info "Updating ${APP} to v${RELEASE}"
-    echo "${RELEASE}" >/opt/${APP}_version.txt
+  if check_for_gh_release "privatebin" "PrivateBin/PrivateBin"; then
+    msg_info "Creating backup"
     cp -f /opt/privatebin/cfg/conf.php /tmp/privatebin_conf.bak
-    wget -q "https://github.com/PrivateBin/PrivateBin/archive/refs/tags/${RELEASE}.zip"
-    unzip -q ${RELEASE}.zip
+    msg_ok "Backup created"
+
     rm -rf /opt/privatebin/*
-    mv PrivateBin-${RELEASE}/* /opt/privatebin/
+    fetch_and_deploy_gh_release "privatebin" "PrivateBin/PrivateBin" "tarball"
+
+    msg_info "Configuring ${APP}"
+    mkdir -p /opt/privatebin/data
     mv /tmp/privatebin_conf.bak /opt/privatebin/cfg/conf.php
     chown -R www-data:www-data /opt/privatebin
-    chmod -R 0755 /opt/privatebin/data
-    echo "${RELEASE}" >/opt/${APP}_version.txt
-    rm -rf ${RELEASE}.zip PrivateBin-${RELEASE}
+    chmod -R 0755 /opt/privatebin/data}
     systemctl reload nginx php8.2-fpm
-    msg_ok "Updated ${APP} to v${RELEASE}"
-  else
-    msg_ok "No update required. ${APP} is already at v${RELEASE}"
+    msg_ok "Configured ${APP}"
+    msg_ok "Successfully updated"
   fi
   exit
 }

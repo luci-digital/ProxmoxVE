@@ -3,8 +3,9 @@
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Kristian Skov
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/linux-nginx?view=aspnetcore-9.0&tabs=linux-ubuntu
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -17,6 +18,7 @@ $STD apt-get update
 $STD apt-get install -y \
   ssh \
   software-properties-common
+
 $STD add-apt-repository -y ppa:dotnet/backports
 $STD apt-get install -y \
   dotnet-sdk-9.0 \
@@ -26,7 +28,7 @@ msg_ok "Installed Dependencies"
 
 msg_info "Configure Application"
 var_project_name="default"
-read -r -p "Type the assembly name of the project: " var_project_name
+read -r -p "${TAB3}Type the assembly name of the project: " var_project_name
 echo "Target assembly: '${var_project_name}'"
 msg_ok "Application Configured"
 
@@ -36,7 +38,7 @@ FTP_PASS=$(openssl rand -base64 18 | tr -dc 'a-zA-Z0-9' | head -c13)
 usermod --password $(echo ${FTP_PASS} | openssl passwd -1 -stdin) ftpuser
 mkdir -p /var/www/html
 usermod -d /var/www/html ftp
-usermod -d /var/www/html ftpuser 
+usermod -d /var/www/html ftpuser
 chown ftpuser /var/www/html
 
 sed -i "s|#write_enable=YES|write_enable=YES|g" /etc/vsftpd.conf
@@ -45,10 +47,10 @@ sed -i "s|#chroot_local_user=YES|chroot_local_user=NO|g" /etc/vsftpd.conf
 systemctl restart -q vsftpd.service
 
 {
-    echo "FTP-Credentials"
-    echo "Username: ftpuser"
-    echo "Password: $FTP_PASS"
-} >> ~/ftp.creds
+  echo "FTP-Credentials"
+  echo "Username: ftpuser"
+  echo "Password: $FTP_PASS"
+} >>~/ftp.creds
 
 msg_ok "FTP server setup completed"
 
@@ -98,7 +100,7 @@ Environment=DOTNET_NOLOGO=true
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable -q --now kestrel-aspnetapi.service
+systemctl enable -q --now kestrel-aspnetapi
 msg_ok "Created Service"
 
 motd_ssh

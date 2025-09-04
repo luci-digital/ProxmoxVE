@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://docs.jellyseerr.dev/
 
 APP="Jellyseerr"
-var_tags="media"
-var_cpu="4"
-var_ram="4096"
-var_disk="8"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-media}"
+var_cpu="${var_cpu:-4}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
-header_info "$APP" 
+header_info "$APP"
 variables
 color
 catch_errors
@@ -24,7 +24,7 @@ function update_script() {
     check_container_storage
     check_container_resources
 
-    if [[ ! -d /opt/jellyseerr ]]; then 
+    if [[ ! -d /opt/jellyseerr ]]; then
         msg_error "No ${APP} Installation Found!"
         exit
     fi
@@ -35,10 +35,10 @@ function update_script() {
         msg_ok "Updating Node.js Repository"
 
         msg_info "Updating Packages"
-        apt-get update &>/dev/null
-        apt-get -y upgrade &>/dev/null
+        $STD apt-get update
+        $STD apt-get -y upgrade
         msg_ok "Updating Packages"
-        
+
         msg_info "Cleaning up"
         apt-get -y autoremove
         apt-get -y autoclean
@@ -50,13 +50,13 @@ function update_script() {
 
     pnpm_current=$(pnpm --version 2>/dev/null)
     pnpm_desired=$(grep -Po '"pnpm":\s*"\K[^"]+' /opt/jellyseerr/package.json)
-    
+
     if [ -z "$pnpm_current" ]; then
         msg_error "pnpm not found. Installing version $pnpm_desired..."
-        npm install -g pnpm@"$pnpm_desired" &>/dev/null
-    elif ! node -e "const semver = require('semver'); process.exit(semver.satisfies('$pnpm_current', '$pnpm_desired') ? 0 : 1)" ; then
+        NODE_VERSION="22" NODE_MODULE="pnpm@$pnpm_desired" setup_nodejs
+    elif ! node -e "const semver = require('semver'); process.exit(semver.satisfies('$pnpm_current', '$pnpm_desired') ? 0 : 1)"; then
         msg_error "Updating pnpm from version $pnpm_current to $pnpm_desired..."
-        npm install -g pnpm@"$pnpm_desired" &>/dev/null
+        NODE_VERSION="22" NODE_MODULE="pnpm@$pnpm_desired" setup_nodejs
     else
         msg_ok "pnpm is already installed and satisfies version $pnpm_desired."
     fi
@@ -70,9 +70,10 @@ function update_script() {
     systemctl stop jellyseerr
     rm -rf dist .next node_modules
     export CYPRESS_INSTALL_BINARY=0
-    pnpm install --frozen-lockfile &>/dev/null
+    cd /opt/jellyseerr
+    $STD pnpm install --frozen-lockfile
     export NODE_OPTIONS="--max-old-space-size=3072"
-    pnpm build &>/dev/null
+    $STD pnpm build
 
     cat <<EOF >/etc/systemd/system/jellyseerr.service
 [Unit]

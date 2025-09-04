@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Source: https://github.com/gristlabs/grist-core
 
 APP="Grist"
-var_tags="database;spreadsheet"
-var_cpu="2"
-var_ram="3072"
-var_disk="6"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-database;spreadsheet}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-3072}"
+var_disk="${var_disk:-6}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -26,7 +26,7 @@ function update_script() {
     exit
   fi
 
-  RELEASE=$(curl -s https://api.github.com/repos/gristlabs/grist-core/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
+  RELEASE=$(curl -fsSL https://api.github.com/repos/gristlabs/grist-core/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
   if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
 
     msg_info "Stopping ${APP} Service"
@@ -38,8 +38,8 @@ function update_script() {
     cd /opt
     rm -rf grist_bak
     mv grist grist_bak
-    wget -q https://github.com/gristlabs/grist-core/archive/refs/tags/v${RELEASE}.zip
-    unzip -q v$RELEASE.zip
+    curl -fsSL "https://github.com/gristlabs/grist-core/archive/refs/tags/v${RELEASE}.zip" -o $(basename "https://github.com/gristlabs/grist-core/archive/refs/tags/v${RELEASE}.zip")
+    $STD unzip v$RELEASE.zip
     mv grist-core-${RELEASE} grist
 
     mkdir -p grist/docs
@@ -51,15 +51,15 @@ function update_script() {
 
     cd grist
     msg_info "Installing Dependencies"
-    yarn install >/dev/null 2>&1
+    $STD yarn install
     msg_ok "Installed Dependencies"
 
     msg_info "Building"
-    yarn run build:prod >/dev/null 2>&1
+    $STD yarn run build:prod
     msg_ok "Done building"
 
     msg_info "Installing Python"
-    yarn run install:python >/dev/null 2>&1
+    $STD yarn run install:python
     msg_ok "Installed Python"
 
     echo "${RELEASE}" >/opt/${APP}_version.txt

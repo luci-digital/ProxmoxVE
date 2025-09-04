@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
-# Copyright (c) 2021-2025 tteck
-# Author: tteck (tteckster)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# Copyright (c) 2021-2025 community-scripts ORG
+# Author: MickLesk (CanbiZ)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
-# Source: https://www.navidrome.org/
+# Source: https://github.com/navidrome/navidrome
 
 APP="Navidrome"
-var_tags="music"
-var_cpu="2"
-var_ram="1024"
-var_disk="4"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-music}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-4}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -20,31 +20,27 @@ color
 catch_errors
 
 function update_script() {
-    header_info
-    check_container_storage
-    check_container_resources
-    if [[ ! -d /opt/navidrome ]]; then
-        msg_error "No ${APP} Installation Found!"
-        exit
-    fi
-    RELEASE=$(curl -s https://api.github.com/repos/navidrome/navidrome/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
-    msg_info "Stopping ${APP}"
-    systemctl stop navidrome
-    msg_ok "Stopped Navidrome"
-
-    msg_info "Updating to v${RELEASE}"
-    cd /opt
-    wget -q https://github.com/navidrome/navidrome/releases/download/v${RELEASE}/navidrome_${RELEASE}_linux_amd64.tar.gz -O Navidrome.tar.gz
-    tar -xvzf Navidrome.tar.gz -C /opt/navidrome/ &>/dev/null
-    chmod +x /opt/navidrome/navidrome
-    msg_ok "Updated ${APP}"
-    rm -rf /opt/Navidrome.tar.gz
-
-    msg_info "Starting ${APP}"
-    systemctl start navidrome.service
-    msg_ok "Started ${APP}"
-    msg_ok "Updated Successfully"
+  header_info
+  check_container_storage
+  check_container_resources
+  if [[ ! -d /var/lib/navidrome ]]; then
+    msg_error "No ${APP} Installation Found!"
     exit
+  fi
+
+  if check_for_gh_release "navidrome" "navidrome/navidrome"; then
+    msg_info "Stopping Services"
+    systemctl stop navidrome
+    msg_ok "Services Stopped"
+
+    fetch_and_deploy_gh_release "navidrome" "navidrome/navidrome" "binary"
+
+    msg_info "Starting Services"
+    systemctl start navidrome
+    msg_ok "Started Services"
+    msg_ok "Updated Successfully"
+  fi
+  exit
 }
 
 start

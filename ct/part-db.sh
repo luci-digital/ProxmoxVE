@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: bvdberg01
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://docs.part-db.de/
 
 APP="Part-DB"
-var_tags="inventory;parts"
-var_cpu="2"
-var_ram="1024"
-var_disk="8"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-inventory;parts}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,7 +27,7 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/Part-DB/Part-DB-server/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
+  RELEASE=$(curl -fsSL https://api.github.com/repos/Part-DB/Part-DB-server/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
   if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
     msg_info "Stopping Service"
     systemctl stop apache2
@@ -36,8 +36,8 @@ function update_script() {
     msg_info "Updating $APP to v${RELEASE}"
     cd /opt
     mv /opt/partdb/ /opt/partdb-backup
-    wget -q "https://github.com/Part-DB/Part-DB-server/archive/refs/tags/v${RELEASE}.zip"
-    unzip -q "v${RELEASE}.zip"
+    curl -fsSL "https://github.com/Part-DB/Part-DB-server/archive/refs/tags/v${RELEASE}.zip" -o $(basename "https://github.com/Part-DB/Part-DB-server/archive/refs/tags/v${RELEASE}.zip")
+    $STD unzip "v${RELEASE}.zip"
     mv /opt/Part-DB-server-${RELEASE}/ /opt/partdb
 
     cd /opt/partdb/
@@ -46,11 +46,11 @@ function update_script() {
     cp -r "/opt/partdb-backup/config/banner.md" /opt/partdb/config/
 
     export COMPOSER_ALLOW_SUPERUSER=1
-    composer install --no-dev -o --no-interaction &>/dev/null
-    yarn install &>/dev/null
-    yarn build &>/dev/null
-    php bin/console cache:clear &>/dev/null
-    php bin/console doctrine:migrations:migrate -n &>/dev/null
+    $STD composer install --no-dev -o --no-interaction
+    $STD yarn install
+    $STD yarn build
+    $STD php bin/console cache:clear
+    $STD php bin/console doctrine:migrations:migrate -n
     chown -R www-data:www-data /opt/partdb
     echo "${RELEASE}" >/opt/${APP}_version.txt
     msg_ok "Updated $APP to v${RELEASE}"

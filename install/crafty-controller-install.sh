@@ -5,7 +5,7 @@
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://docs.craftycontrol.com/pages/getting-started/installation/linux/
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -15,9 +15,6 @@ update_os
 
 msg_info "Installing Dependencies (a lot of patience)"
 $STD apt-get install -y \
-  curl \
-  sudo \
-  mc \
   git \
   sed \
   lsb-release \
@@ -27,10 +24,7 @@ $STD apt-get install -y \
 msg_ok "Installed Dependencies"
 
 msg_info "Setting up TemurinJDK"
-mkdir -p /etc/apt/keyrings
-wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc
-echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
-$STD apt-get update
+setup_java
 $STD apt-get install -y temurin-{8,11,17,21}-jre
 sudo update-alternatives --set java /usr/lib/jvm/temurin-21-jre-amd64/bin/java
 msg_ok "Installed TemurinJDK"
@@ -44,14 +38,14 @@ $STD apt-get install -y \
 rm -rf /usr/lib/python3.*/EXTERNALLY-MANAGED
 msg_ok "Setup Python3"
 
-msg_info "Installing Craty-Controller (Patience)"
+msg_info "Installing Crafty-Controller (Patience)"
 useradd crafty -m -s /bin/bash
 cd /opt
 mkdir -p /opt/crafty-controller/crafty /opt/crafty-controller/server
-RELEASE=$(curl -s "https://gitlab.com/api/v4/projects/20430749/releases" | grep -o '"tag_name":"v[^"]*"' | head -n 1 | sed 's/"tag_name":"v//;s/"//')
+RELEASE=$(curl -fsSL "https://gitlab.com/api/v4/projects/20430749/releases" | grep -o '"tag_name":"v[^"]*"' | head -n 1 | sed 's/"tag_name":"v//;s/"//')
 echo "${RELEASE}" >"/opt/crafty-controller_version.txt"
-wget -q "https://gitlab.com/crafty-controller/crafty-4/-/archive/v${RELEASE}/crafty-4-v${RELEASE}.zip"
-unzip -q crafty-4-v${RELEASE}.zip
+curl -fsSL "https://gitlab.com/crafty-controller/crafty-4/-/archive/v${RELEASE}/crafty-4-v${RELEASE}.zip" -o "crafty-4-v${RELEASE}.zip"
+$STD unzip crafty-4-v${RELEASE}.zip
 cp -a crafty-4-v${RELEASE}/. /opt/crafty-controller/crafty/crafty-4/
 rm -rf crafty-4-v${RELEASE}
 
@@ -66,7 +60,7 @@ $STD sudo -u crafty bash -c '
 msg_ok "Installed Craft-Controller and dependencies"
 
 msg_info "Setting up Crafty-Controller service"
-cat > /etc/systemd/system/crafty-controller.service << 'EOF'
+cat >/etc/systemd/system/crafty-controller.service <<'EOF'
 [Unit]
 Description=Crafty 4
 After=network.target
@@ -85,10 +79,10 @@ EOF
 $STD systemctl enable -q --now crafty-controller
 sleep 10
 {
-    echo "Crafty-Controller-Credentials"
-    echo "Username: $(grep -oP '(?<="username": ")[^"]*' /opt/crafty-controller/crafty/crafty-4/app/config/default-creds.txt)"
-    echo "Password: $(grep -oP '(?<="password": ")[^"]*' /opt/crafty-controller/crafty/crafty-4/app/config/default-creds.txt)"
-} >> ~/crafty-controller.creds
+  echo "Crafty-Controller-Credentials"
+  echo "Username: $(grep -oP '(?<="username": ")[^"]*' /opt/crafty-controller/crafty/crafty-4/app/config/default-creds.txt)"
+  echo "Password: $(grep -oP '(?<="password": ")[^"]*' /opt/crafty-controller/crafty/crafty-4/app/config/default-creds.txt)"
+} >>~/crafty-controller.creds
 msg_ok "Crafty-Controller service started"
 
 motd_ssh

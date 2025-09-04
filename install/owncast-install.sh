@@ -2,10 +2,10 @@
 
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
-# License: MIT
-# https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://owncast.online/
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -14,19 +14,10 @@ network_check
 update_os
 
 msg_info "Installing Dependencies (Patience)"
-$STD apt-get install -y curl
-$STD apt-get install -y sudo
-$STD apt-get install -y mc
 $STD apt-get install -y ffmpeg
 msg_ok "Installed Dependencies"
 
-msg_info "Installing Owncast"
-mkdir /opt/owncast
-cd /opt/owncast
-wget -q $(curl -s https://api.github.com/repos/owncast/owncast/releases/latest | grep download | grep linux-64bit | cut -d\" -f4)
-$STD unzip owncast*.zip
-rm owncast*.zip
-msg_ok "Installed Owncast"
+fetch_and_deploy_gh_release "owncast" "owncast/owncast" "prebuild" "latest" "/opt/owncast" "owncast*linux-64bit.zip"
 
 msg_info "Creating Service"
 cat <<EOF >/etc/systemd/system/owncast.service
@@ -42,7 +33,7 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable -q --now owncast.service
+systemctl enable -q --now owncast
 msg_ok "Created Service"
 
 motd_ssh

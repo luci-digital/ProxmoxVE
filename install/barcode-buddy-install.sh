@@ -3,8 +3,9 @@
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: bvdberg01
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://github.com/Forceu/barcodebuddy
 
-source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
+source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
 verb_ip6
 catch_errors
@@ -14,24 +15,16 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
-  curl \
-  sudo \
-  mc \
-  apache2 \
   redis \
-  php-{curl,date,json,mbstring,redis,sqlite3,sockets} \
-  libapache2-mod-php
+  sqlite3
 msg_ok "Installed Dependencies"
 
-msg_info "Installing barcodebuddy"
-RELEASE=$(curl -s https://api.github.com/repos/Forceu/barcodebuddy/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
-cd /opt
-wget -q "https://github.com/Forceu/barcodebuddy/archive/refs/tags/v${RELEASE}.zip"
-unzip -q "v${RELEASE}.zip"
-mv "/opt/barcodebuddy-${RELEASE}" /opt/barcodebuddy
+PHP_VERSION="8.2" PHP_APACHE="YES" PHP_MODULE="redis, sqlite3" setup_php
+fetch_and_deploy_gh_release "barcodebuddy" "Forceu/barcodebuddy"
+
+msg_info "Configuring barcodebuddy"
 chown -R www-data:www-data /opt/barcodebuddy/data
-echo "${RELEASE}" >/opt/${APPLICATION}_version.txt
-msg_ok "Installed barcodebuddy"
+msg_ok "Configured barcodebuddy"
 
 msg_info "Creating Services"
 cat <<EOF >/etc/systemd/system/barcodebuddy.service
@@ -75,7 +68,6 @@ motd_ssh
 customize
 
 msg_info "Cleaning up"
-rm -rf "/opt/v${RELEASE}.zip"
 $STD apt-get -y autoremove
 $STD apt-get -y autoclean
 msg_ok "Cleaned"

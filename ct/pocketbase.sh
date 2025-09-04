@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://pocketbase.io/
 
 APP="Pocketbase"
-var_tags="database"
-var_cpu="1"
-var_ram="512"
-var_disk="8"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-database}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-512}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,18 +27,21 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  msg_info "Stopping ${APP}"
-  systemctl stop pocketbase
-  msg_ok "Stopped ${APP}"
+  if check_for_gh_release "pocketbase" "pocketbase/pocketbase"; then
+    msg_info "Stopping ${APP}"
+    systemctl stop pocketbase
+    msg_ok "Stopped ${APP}"
 
-  msg_info "Updating ${APP}"
-  /opt/pocketbase/pocketbase update
-  msg_ok "Updated ${APP}"
+    msg_info "Updating ${APP}"
+    /opt/pocketbase/pocketbase update
+    echo "${CHECK_UPDATE_RELEASE}" >~/.pocketbase
+    msg_ok "Updated ${APP}"
 
-  msg_info "Starting ${APP}"
-  systemctl start pocketbase
-  msg_ok "Started ${APP}"
-  msg_ok "Updated Successfully"
+    msg_info "Starting ${APP}"
+    systemctl start pocketbase
+    msg_ok "Started ${APP}"
+    msg_ok "Update Successful"
+  fi
   exit
 }
 

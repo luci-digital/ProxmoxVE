@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: thost96 (thost96)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://www.proxmox.com/en/products/proxmox-mail-gateway
 
 APP="Proxmox-Mail-Gateway"
-var_tags="mail"
-var_cpu="2"
-var_ram="4096"
-var_disk="10"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-mail}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-10}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -23,10 +23,13 @@ function update_script() {
   header_info
   check_container_storage
   check_container_resources
-  if [[ ! -e /usr/bin/pmgproxy ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
+  if [[ ! -e /usr/bin/pmgproxy ]]; then
+    msg_error "No ${APP} Installation Found!"
+    exit
+  fi
   msg_info "Updating ${APP}"
-  apt-get update &>/dev/null
-  apt-get -y upgrade &>/dev/null
+  $STD apt-get update
+  $STD apt-get -y upgrade
   msg_ok "Updated ${APP}"
   exit
 }

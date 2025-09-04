@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
-# Copyright (c) 2021-2025 tteck
-# Author: tteck (tteckster)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# Copyright (c) 2021-2025 community-scripts ORG
+# Author: MickLesk (CanbiZ)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://linkwarden.app/
 
 APP="Linkwarden"
-var_tags="bookmark"
-var_cpu="2"
-var_ram="2048"
-var_disk="12"
-var_os="ubuntu"
-var_version="22.04"
+var_tags="${var_tags:-bookmark}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-12}"
+var_os="${var_os:-ubuntu}"
+var_version="${var_version:-24.04}"
 
 header_info "$APP"
 variables
@@ -26,39 +26,44 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/linkwarden/linkwarden/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
-  if [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]] || [[ ! -f /opt/${APP}_version.txt ]]; then
+  if check_for_gh_release "linkwarden" "linkwarden/linkwarden"; then
+    NODE_VERSION="22" NODE_MODULE="yarn@latest" setup_nodejs
     msg_info "Stopping ${APP}"
     systemctl stop linkwarden
     msg_ok "Stopped ${APP}"
 
-    msg_info "Updating ${APP} to ${RELEASE}"
-    cd /opt
+    RUST_CRATES="monolith" setup_rust
+
+    msg_info "Backing up data"
     mv /opt/linkwarden/.env /opt/.env
+    [ -d /opt/linkwarden/data ] && mv /opt/linkwarden/data /opt/data.bak
     rm -rf /opt/linkwarden
-    RELEASE=$(curl -s https://api.github.com/repos/linkwarden/linkwarden/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
-    wget -q "https://github.com/linkwarden/linkwarden/archive/refs/tags/${RELEASE}.zip"
-    unzip -q ${RELEASE}.zip
-    mv linkwarden-${RELEASE:1} /opt/linkwarden
+    msg_ok "Backed up data"
+
+    fetch_and_deploy_gh_release "linkwarden" "linkwarden/linkwarden"
+
+    msg_info "Updating ${APP}"
     cd /opt/linkwarden
-    yarn &>/dev/null
-    npx playwright install-deps &>/dev/null
-    yarn playwright install &>/dev/null
-    cp /opt/.env /opt/linkwarden/.env
-    yarn build &>/dev/null
-    yarn prisma migrate deploy &>/dev/null
-    echo "${RELEASE}" >/opt/${APP}_version.txt
-    msg_ok "Updated ${APP} to ${RELEASE}"
+    $STD yarn
+    $STD npx playwright install-deps
+    $STD yarn playwright install
+    mv /opt/.env /opt/linkwarden/.env
+    $STD yarn prisma:generate
+    $STD yarn web:build
+    $STD yarn prisma:deploy
+    [ -d /opt/data.bak ] && mv /opt/data.bak /opt/linkwarden/data
+    msg_ok "Updated ${APP}"
 
     msg_info "Starting ${APP}"
     systemctl start linkwarden
     msg_ok "Started ${APP}"
+
     msg_info "Cleaning up"
-    rm -rf /opt/${RELEASE}.zip
+    rm -rf ~/.cargo/registry ~/.cargo/git ~/.cargo/.package-cache ~/.rustup
+    rm -rf /root/.cache/yarn
+    rm -rf /opt/linkwarden/.next/cache
     msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-  else
-    msg_ok "No update required.  ${APP} is already at ${RELEASE}."
   fi
   exit
 }

@@ -2,8 +2,8 @@
 
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: kristocopani
-# License: MIT
-# https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://onedev.io/
 
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
@@ -15,18 +15,14 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
-    curl \
-    mc \
-    sudo \
-    default-jdk \
-    git \
-    git-lfs
+  default-jdk \
+  git \
+  git-lfs
 msg_ok "Installed Dependencies"
-
 
 msg_info "Installing OneDev"
 cd /opt
-wget -q https://code.onedev.io/onedev/server/~site/onedev-latest.tar.gz
+curl -fsSL "https://code.onedev.io/onedev/server/~site/onedev-latest.tar.gz" -o "/opt/onedev-latest.tar.gz"
 tar -xzf onedev-latest.tar.gz
 mv /opt/onedev-latest /opt/onedev
 $STD /opt/onedev/bin/server.sh install

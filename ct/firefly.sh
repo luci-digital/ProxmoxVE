@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
-# Author: quantumryuu
+# Author: quantumryuu | Co-Author: Slaviša Arežina (tremor021)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://firefly-iii.org/
 
 APP="Firefly"
-var_tags="finance"
-var_cpu="1"
-var_ram="1024"
-var_disk="2"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-finance}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-2}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -20,51 +20,49 @@ color
 catch_errors
 
 function update_script() {
-header_info
-check_container_storage
-check_container_resources
+  header_info
+  check_container_storage
+  check_container_resources
 
   if [[ ! -d /opt/firefly ]]; then
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/firefly-iii/firefly-iii/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4)}')
-  if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
+  if check_for_gh_release "firefly" "firefly-iii/firefly-iii"; then
     msg_info "Stopping Apache2"
     systemctl stop apache2
     msg_ok "Stopped Apache2"
 
-    msg_info "Updating ${APP} to v${RELEASE}"
+    msg_info "Backing up data"
     cp /opt/firefly/.env /opt/.env
     cp -r /opt/firefly/storage /opt/storage
-    rm -rf /opt/firefly/*
-    cd /opt
-    wget -q "https://github.com/firefly-iii/firefly-iii/releases/download/v${RELEASE}/FireflyIII-v${RELEASE}.tar.gz"
-    tar -xzf FireflyIII-v${RELEASE}.tar.gz -C /opt/firefly --exclude='storage'
-    cd /opt/firefly 
-    composer install --no-dev --no-interaction &>/dev/null
-    php artisan migrate --seed --force &>/dev/null
-    php artisan firefly:decrypt-all &>/dev/null
-    php artisan cache:clear &>/dev/null
-    php artisan view:clear &>/dev/null
-    php artisan firefly:upgrade-database &>/dev/null
-    php artisan firefly:laravel-passport-keys &>/dev/null
-    chown -R www-data:www-data /opt/firefly
-    chmod -R 775 /opt/firefly/storage
+    msg_ok "Backed up data"
 
-    echo "${RELEASE}" >"/opt/${APP}_version.txt"
-    msg_ok "Updated ${APP} to v${RELEASE}"
+    fetch_and_deploy_gh_release "firefly" "firefly-iii/firefly-iii" "prebuild" "latest" "/opt/firefly" "FireflyIII-*.zip"
+    setup_composer
+
+    msg_info "Updating ${APP}"
+    rm -rf /opt/firefly/storage
+    cp /opt/.env /opt/firefly/.env
+    cp -r /opt/storage /opt/firefly/storage
+
+    chown -R www-data:www-data /opt/firefly
+    find /opt/firefly/storage -type d -exec chmod 775 {} \;
+    find /opt/firefly/storage -type f -exec chmod 664 {} \;
+    mkdir -p /opt/firefly/storage/framework/{cache/data,sessions,views}
+    $STD sudo -u www-data php /opt/firefly/artisan cache:clear
+
+    $STD php artisan migrate --seed --force
+    $STD php artisan cache:clear
+    $STD php artisan view:clear
+    $STD php artisan firefly-iii:upgrade-database
+    $STD php artisan firefly-iii:laravel-passport-keys
+    msg_ok "Updated ${APP}"
 
     msg_info "Starting Apache2"
     systemctl start apache2
     msg_ok "Started Apache2"
-
-    msg_info "Cleaning up"
-    rm -rf /opt/FireflyIII-v${RELEASE}.tar.gz
-    msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-  else
-    msg_ok "No update required. ${APP} is already at v${RELEASE}."
   fi
   exit
 }

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: MickLesk (CanbiZ)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://docmost.com/
 
 APP="Docmost"
-var_tags="documents"
-var_cpu="3"
-var_ram="3072"
-var_disk="7"
-var_os="debian"
-var_version="12"
+var_tags="${var_tags:-documents}"
+var_cpu="${var_cpu:-3}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
 
 header_info "$APP"
 variables
@@ -26,36 +26,36 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/docmost/docmost/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
-  if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
+  if ! command -v node >/dev/null || [[ "$(/usr/bin/env node -v | grep -oP '^v\K[0-9]+')" != "22" ]]; then
+    NODE_VERSION="22" NODE_MODULE="pnpm@$(curl -s https://raw.githubusercontent.com/docmost/docmost/main/package.json | jq -r '.packageManager | split("@")[1]')" setup_nodejs
+  fi
+  export NODE_OPTIONS="--max_old_space_size=4096"
+
+  if check_for_gh_release "docmost" "docmost/docmost"; then
     msg_info "Stopping ${APP}"
     systemctl stop docmost
     msg_ok "${APP} Stopped"
 
-    msg_info "Updating ${APP} to v${RELEASE}"
+    msg_info "Backing up data"
     cp /opt/docmost/.env /opt/
+    cp -r /opt/docmost/data /opt/
     rm -rf /opt/docmost
-    temp_file=$(mktemp)
-    wget -q "https://github.com/docmost/docmost/archive/refs/tags/v${RELEASE}.tar.gz" -O "$temp_file"
-    tar -xzf "$temp_file"
-    mv docmost-${RELEASE} /opt/docmost
+    msg_ok "Data backed up"
+
+    fetch_and_deploy_gh_release "docmost" "docmost/docmost"
+
+    msg_info "Updating ${APP}"
     cd /opt/docmost
     mv /opt/.env /opt/docmost/.env
-    pnpm install --force &>/dev/null
-    pnpm build &>/dev/null
-    echo "${RELEASE}" >/opt/${APP}_version.txt
+    mv /opt/data /opt/docmost/data
+    $STD pnpm install --force
+    $STD pnpm build
     msg_ok "Updated ${APP}"
 
     msg_info "Starting ${APP}"
     systemctl start docmost
     msg_ok "Started ${APP}"
-
-    msg_info "Cleaning Up"
-    rm -f ${temp_file}
-    msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-  else
-    msg_ok "No update required. ${APP} is already at ${RELEASE}"
   fi
   exit
 }

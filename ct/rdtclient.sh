@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://github.com/rogerfar/rdt-client
 
 APP="RDTClient"
-var_tags="torrent"
-var_cpu="1"
-var_ram="1024"
-var_disk="4"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-torrent}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-4}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -20,38 +20,40 @@ color
 catch_errors
 
 function update_script() {
-    header_info
-    check_container_storage
-    check_container_resources
-    if [[ ! -d /opt/rdtc/ ]]; then
-        msg_error "No ${APP} Installation Found!"
-        exit
-    fi
-    msg_info "Stopping ${APP}"
+  header_info
+  check_container_storage
+  check_container_resources
+  if [[ ! -d /opt/rdtc/ ]]; then
+    msg_error "No ${APP} Installation Found!"
+    exit
+  fi
+  if check_for_gh_release "rdt-client" "rogerfar/rdt-client"; then
+    msg_info "Stopping Service"
     systemctl stop rdtc
-    msg_ok "Stopped ${APP}"
+    msg_ok "Stopped Service"
 
-    msg_info "Updating ${APP}"
+    msg_info "Creating backup"
+    mkdir -p /opt/rdtc-backup
+    cp -R /opt/rdtc/appsettings.json /opt/rdtc-backup/
+    msg_ok "Backup created"
+
+    fetch_and_deploy_gh_release "rdt-client" "rogerfar/rdt-client" "prebuild" "latest" "/opt/rdtc" "RealDebridClient.zip"
+    cp -R /opt/rdtc-backup/appsettings.json /opt/rdtc/
     if dpkg-query -W dotnet-sdk-8.0 >/dev/null 2>&1; then
-        apt-get remove --purge -y dotnet-sdk-8.0 &>/dev/null
-        apt-get install -y dotnet-sdk-9.0 &>/dev/null
+      $STD apt-get remove --purge -y dotnet-sdk-8.0
+      $STD apt-get install -y dotnet-sdk-9.0
     fi
-    mkdir -p rdtc-backup
-    cp -R /opt/rdtc/appsettings.json rdtc-backup/
-    wget -q https://github.com/rogerfar/rdt-client/releases/latest/download/RealDebridClient.zip
-    unzip -oqq RealDebridClient.zip -d /opt/rdtc
-    cp -R rdtc-backup/appsettings.json /opt/rdtc/
-    msg_ok "Updated ${APP}"
 
-    msg_info "Starting ${APP}"
+    msg_info "Starting Service"
     systemctl start rdtc
-    msg_ok "Started ${APP}"
+    msg_ok "Started Service"
 
     msg_info "Cleaning Up"
-    rm -rf rdtc-backup RealDebridClient.zip
+    rm -rf /opt/rdtc-backup
     msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-    exit
+  fi
+  exit
 }
 
 start

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: bvdberg01
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://koillection.github.io/
 
 APP="Koillection"
-var_tags="network"
-var_cpu="2"
-var_ram="1024"
-var_disk="8"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-network}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-1024}"
+var_disk="${var_disk:-8}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,43 +27,39 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/benjaminjonard/koillection/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
-  if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
+  if check_for_gh_release "koillection" "benjaminjonard/koillection"; then
     msg_info "Stopping Service"
     systemctl stop apache2
     msg_ok "Stopped Service"
 
-    msg_info "Updating ${APP} to v${RELEASE}"
-    cd /opt
+    msg_info "Creating a backup"
     mv /opt/koillection/ /opt/koillection-backup
-    wget -q "https://github.com/benjaminjonard/koillection/archive/refs/tags/${RELEASE}.zip"
-    unzip -q "${RELEASE}.zip"
-    mv "/opt/koillection-${RELEASE}" /opt/koillection
+    msg_ok "Backup created"
+
+    fetch_and_deploy_gh_release "koillection" "benjaminjonard/koillection"
+
+    msg_info "Updating ${APP}"
     cd /opt/koillection
     cp -r /opt/koillection-backup/.env.local /opt/koillection
     cp -r /opt/koillection-backup/public/uploads/. /opt/koillection/public/uploads/
     export COMPOSER_ALLOW_SUPERUSER=1
-    composer install --no-dev -o --no-interaction --classmap-authoritative &>/dev/null
-    php bin/console doctrine:migrations:migrate --no-interaction &>/dev/null
-    php bin/console app:translations:dump &>/dev/null
+    $STD composer install --no-dev -o --no-interaction --classmap-authoritative
+    $STD php bin/console doctrine:migrations:migrate --no-interaction
+    $STD php bin/console app:translations:dump
     cd assets/
-    yarn install &>/dev/null
-    yarn build &>/dev/null
+    $STD yarn install
+    $STD yarn build
     chown -R www-data:www-data /opt/koillection/public/uploads
-    echo "${RELEASE}" >/opt/${APP}_version.txt
-    msg_ok "Updated $APP to v${RELEASE}"
+    msg_ok "Updated $APP"
 
     msg_info "Starting Service"
     systemctl start apache2
     msg_ok "Started Service"
 
     msg_info "Cleaning up"
-    rm -r "/opt/${RELEASE}.zip"
     rm -r /opt/koillection-backup
     msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-  else
-    msg_ok "No update required. ${APP} is already at v${RELEASE}"
   fi
   exit
 }

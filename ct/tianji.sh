@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: MickLesk (Canbiz)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://tianji.msgbyte.com/
 
 APP="Tianji"
-var_tags="monitoring"
-var_cpu="4"
-var_ram="4096"
-var_disk="12"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-monitoring}"
+var_cpu="${var_cpu:-4}"
+var_ram="${var_ram:-4096}"
+var_disk="${var_disk:-12}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -26,47 +26,52 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  RELEASE=$(curl -s https://api.github.com/repos/msgbyte/tianji/releases/latest | grep "tag_name" | awk '{print substr($2, 3, length($2)-4) }')
-  if [[ ! -f /opt/${APP}_version.txt ]] || [[ "${RELEASE}" != "$(cat /opt/${APP}_version.txt)" ]]; then
-    msg_info "Stopping ${APP} Service"
+
+  setup_uv
+
+  if check_for_gh_release "tianji" "msgbyte/tianji"; then
+    NODE_VERSION="22" NODE_MODULE="pnpm@$(curl -s https://raw.githubusercontent.com/msgbyte/tianji/master/package.json | jq -r '.packageManager | split("@")[1]')" setup_nodejs
+
+    msg_info "Stopping Service"
     systemctl stop tianji
-    msg_ok "Stopped ${APP} Service"
-    
-    msg_info "Updating ${APP} to v${RELEASE}"
-    cd /opt
+    msg_ok "Stopped Service"
+
+    msg_info "Backing up data"
     cp /opt/tianji/src/server/.env /opt/.env
     mv /opt/tianji /opt/tianji_bak
-    wget -q "https://github.com/msgbyte/tianji/archive/refs/tags/v${RELEASE}.zip"
-    unzip -q v${RELEASE}.zip
-    mv tianji-${RELEASE} /opt/tianji
-    cd tianji
+    msg_ok "Backed up data"
+
+    fetch_and_deploy_gh_release "tianji" "msgbyte/tianji"
+
+    msg_info "Updating ${APP}"
+    cd /opt/tianji
     export NODE_OPTIONS="--max_old_space_size=4096"
-    pnpm install --filter @tianji/client... --config.dedupe-peer-dependents=false --frozen-lockfile >/dev/null 2>&1
-    pnpm build:static >/dev/null 2>&1
-    pnpm install --filter @tianji/server... --config.dedupe-peer-dependents=false >/dev/null 2>&1
-    mkdir -p ./src/server/public >/dev/null 2>&1
-    cp -r ./geo ./src/server/public >/dev/null 2>&1
-    pnpm build:server >/dev/null 2>&1
+    $STD pnpm install --filter @tianji/client... --config.dedupe-peer-dependents=false --frozen-lockfile
+    $STD pnpm build:static
+    $STD pnpm install --filter @tianji/server... --config.dedupe-peer-dependents=false
+    mkdir -p ./src/server/public
+    cp -r ./geo ./src/server/public
+    $STD pnpm build:server
     mv /opt/.env /opt/tianji/src/server/.env
     cd src/server
-    pnpm db:migrate:apply >/dev/null 2>&1
-    echo "${RELEASE}" >/opt/${APP}_version.txt
-    msg_ok "Updated ${APP} to v${RELEASE}"
-    
+    $STD pnpm db:migrate:apply
+    msg_ok "Updated ${APP}"
+
+    msg_info "Updating AppRise"
+    $STD uv pip install apprise cryptography --system
+    msg_ok "Updated AppRise"
+
     msg_info "Starting ${APP}"
     systemctl start tianji
     msg_ok "Started ${APP}"
-    
+
     msg_info "Cleaning up"
-    rm -R /opt/v${RELEASE}.zip
     rm -rf /opt/tianji_bak
     rm -rf /opt/tianji/src/client
     rm -rf /opt/tianji/website
     rm -rf /opt/tianji/reporter
     msg_ok "Cleaned"
     msg_ok "Updated Successfully"
-  else
-    msg_ok "No update required.  ${APP} is already at v${RELEASE}."
   fi
   exit
 }

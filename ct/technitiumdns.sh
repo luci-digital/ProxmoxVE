@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 tteck
 # Author: tteck (tteckster)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
 # Source: https://technitium.com/dns/
 
 APP="Technitium DNS"
-var_tags="dns"
-var_cpu="1"
-var_ram="512"
-var_disk="2"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_tags="${var_tags:-dns}"
+var_cpu="${var_cpu:-1}"
+var_ram="${var_ram:-512}"
+var_disk="${var_disk:-2}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -27,17 +27,20 @@ function update_script() {
     msg_error "No ${APP} Installation Found!"
     exit
   fi
-  msg_info "Updating ${APP}"
 
-  if ! dpkg -s aspnetcore-runtime-8.0 >/dev/null 2>&1; then
-    wget -q https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb
-    dpkg -i packages-microsoft-prod.deb &>/dev/null
-    apt-get update &>/dev/null
-    apt-get install -y aspnetcore-runtime-8.0 &>/dev/null
-    rm packages-microsoft-prod.deb
+  RELEASE=$(curl -fsSL https://technitium.com/dns/ | grep -oP 'Version \K[\d.]+')
+  if [[ ! -f ~/.technitium || "${RELEASE}" != "$(cat ~/.technitium)" ]]; then
+    msg_info "Updating ${APP}"
+    curl -fsSL "https://download.technitium.com/dns/DnsServerPortable.tar.gz" -o /opt/DnsServerPortable.tar.gz
+    $STD tar zxvf /opt/DnsServerPortable.tar.gz -C /opt/technitium/dns/
+    msg_ok "Updated Successfully"
+
+    msg_info "Cleaning up"
+    rm -f /opt/DnsServerPortable.tar.gz
+    msg_ok "Cleaned up"
+  else
+    msg_ok "No update required.  ${APP} is already at v${RELEASE}."
   fi
-  bash <(curl -fsSL https://download.technitium.com/dns/install.sh) &>/dev/null
-  msg_ok "Updated Successfully"
   exit
 }
 

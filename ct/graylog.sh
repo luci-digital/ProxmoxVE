@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Slaviša Arežina (tremor021)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -7,12 +7,12 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 
 APP="Graylog"
 TAGS="logging"
-var_cpu="2"
-var_ram="8192"
-var_disk="30"
-var_os="debian"
-var_version="12"
-var_unprivileged="1"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-8192}"
+var_disk="${var_disk:-30}"
+var_os="${var_os:-debian}"
+var_version="${var_version:-12}"
+var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
 variables
@@ -34,8 +34,8 @@ function update_script() {
     msg_ok "Stopped $APP"
 
     msg_info "Updating $APP"
-    apt-get update &> /dev/null
-    apt-get upgrade -y &> /dev/null
+    $STD apt-get update
+    $STD apt-get upgrade -y
     msg_ok "Updated $APP"
 
     msg_info "Starting $APP"

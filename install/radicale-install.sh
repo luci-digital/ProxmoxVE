@@ -3,6 +3,7 @@
 # Copyright (c) 2021-2025 community-scripts ORG
 # Author: Slaviša Arežina (tremor021)
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
+# Source: https://radicale.org/
 
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 color
@@ -14,9 +15,6 @@ update_os
 
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
-  curl \
-  sudo \
-  mc \
   apache2-utils \
   python3-pip \
   python3.11-venv
@@ -29,10 +27,10 @@ $STD python3 -m pip install --upgrade https://github.com/Kozea/Radicale/archive/
 RNDPASS=$(openssl rand -base64 18 | tr -dc 'a-zA-Z0-9' | head -c13)
 $STD htpasswd -c -b -5 /opt/radicale/users admin $RNDPASS
 {
-echo "Radicale Credentials"
-echo "Admin User: admin"
-echo "Admin Password: $RNDPASS"
-} >> ~/radicale.creds
+  echo "Radicale Credentials"
+  echo "Admin User: admin"
+  echo "Admin Password: $RNDPASS"
+} >>~/radicale.creds
 msg_ok "Done setting up Radicale"
 
 msg_info "Setup Service"
