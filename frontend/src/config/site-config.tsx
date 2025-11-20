@@ -10,9 +10,9 @@ export const basePath = process.env.BASE_PATH || "";
 export const navbarLinks = [
   {
     href: `https://github.com/community-scripts/${basePath}`,
-    event: "Github",
+    event: "GitHub",
     icon: <FaGithub className="h-4 w-4" />,
-    text: "Github",
+    text: "GitHub",
   },
   {
     href: `https://discord.gg/2wvnMDgdnU`,
@@ -22,9 +22,9 @@ export const navbarLinks = [
   },
   {
     href: `https://github.com/community-scripts/${basePath}/blob/main/CHANGELOG.md`,
-    event: "Change Log",
+    event: "Changelog",
     icon: <Scroll className="h-4 w-4" />,
-    text: "Change Log",
+    text: "Changelog",
     mobileHidden: true,
   },
   {
@@ -46,7 +46,7 @@ export const mostPopularScripts = ["post-pve-install", "docker", "homeassistant"
 
 export const analytics = {
   url: "analytics.bramsuurd.nl",
-  token: "aefee1b9-2a12-4ac2-9d82-a63113edc62e",
+  token: "f9eee289f931",
 };
 
 export const AlertColors = {
@@ -58,8 +58,8 @@ export const OperatingSystems: OperatingSystem[] = [
   {
     name: "Debian",
     versions: [
-      { name: "11", slug: "bullseye" },
       { name: "12", slug: "bookworm" },
+      { name: "13", slug: "trixie" },
     ],
   },
   {

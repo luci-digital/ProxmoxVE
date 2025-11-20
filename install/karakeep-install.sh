@@ -14,7 +14,7 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
-$STD apt-get install -y \
+$STD apt install -y \
   build-essential \
   ca-certificates \
   chromium \
@@ -158,7 +158,7 @@ Wants=network.target karakeep-browser.service meilisearch.service
 After=network.target karakeep-browser.service meilisearch.service
 
 [Service]
-ExecStart=/usr/bin/node dist/index.mjs
+ExecStart=/usr/bin/node dist/index.js
 WorkingDirectory=/opt/karakeep/apps/workers
 EnvironmentFile=/etc/karakeep/karakeep.env
 Restart=always
@@ -173,8 +173,4 @@ msg_ok "Created Services"
 
 motd_ssh
 customize
-
-msg_info "Cleaning up"
-$STD apt-get autoremove -y
-$STD apt-get autoclean -y
-msg_ok "Cleaned"
+cleanup_lxc

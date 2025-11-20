@@ -11,7 +11,7 @@ var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-4}"
 var_os="${var_os:-debian}"
-var_version="${var_version:-12}"
+var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
@@ -29,17 +29,18 @@ function update_script() {
     exit
   fi
   if check_for_gh_release "planka" "plankanban/planka"; then
-    msg_info "Stopping $APP"
+    msg_info "Stopping Service"
     systemctl stop planka
-    msg_ok "Stopped $APP"
+    msg_info "Stopped Service"
 
     msg_info "Backing up data"
-    mkdir -p /opt/planka-backup/{favicons,user-avatars,background-images,attachments}
-    mv /opt/planka/.env /opt/planka-backup
-    [ -d /opt/planka/public/favicons ] && find /opt/planka/public/favicons -maxdepth 1 -type f -exec mv -t /opt/planka-backup/favicons {} +
-    [ -d /opt/planka/public/user-avatars ] && find /opt/planka/public/user-avatars -maxdepth 1 -type f -exec mv -t /opt/planka-backup/user-avatars {} +
-    [ -d /opt/planka/public/background-images ] && find /opt/planka/public/background-images -maxdepth 1 -type f -exec mv -t /opt/planka-backup/background-images {} +
-    [ -d /opt/planka/private/attachments ] && find /opt/planka/private/attachments -maxdepth 1 -type f -exec mv -t /opt/planka-backup/attachments {} +
+    BK="/opt/planka-backup"
+    mkdir -p "$BK"/{favicons,user-avatars,background-images,attachments}
+    [ -f /opt/planka/.env ] && mv /opt/planka/.env "$BK"/
+    [ -d /opt/planka/public/favicons ] && cp -a /opt/planka/public/favicons/. "$BK/favicons/"
+    [ -d /opt/planka/public/user-avatars ] && cp -a /opt/planka/public/user-avatars/. "$BK/user-avatars/"
+    [ -d /opt/planka/public/background-images ] && cp -a /opt/planka/public/background-images/. "$BK/background-images/"
+    [ -d /opt/planka/private/attachments ] && cp -a /opt/planka/private/attachments/. "$BK/attachments/"
     rm -rf /opt/planka
     msg_ok "Backed up data"
 
@@ -51,17 +52,19 @@ function update_script() {
     msg_ok "Updated Frontend"
 
     msg_info "Restoring data"
-    mv /opt/planka-backup/.env /opt/planka/
-    [ -d /opt/planka-backup/favicons ] && find /opt/planka-backup/favicons -maxdepth 1 -type f -exec mv -t /opt/planka/public/favicons {} +
-    [ -d /opt/planka-backup/user-avatars ] && find /opt/planka-backup/user-avatars -maxdepth 1 -type f -exec mv -t /opt/planka/public/user-avatars {} +
-    [ -d /opt/planka-backup/background-images ] && find /opt/planka-backup/background-images -maxdepth 1 -type f -exec mv -t /opt/planka/public/background-images {} +
-    [ -d /opt/planka-backup/attachments ] && find /opt/planka-backup/attachments -maxdepth 1 -type f -exec mv -t /opt/planka/private/attachments {} +
+    [ -f "$BK/.env" ] && mv "$BK/.env" /opt/planka/.env
+    mkdir -p /opt/planka/public/{favicons,user-avatars,background-images} /opt/planka/private/attachments
+    [ -d "$BK/favicons" ] && cp -a "$BK/favicons/." /opt/planka/public/favicons/
+    [ -d "$BK/user-avatars" ] && cp -a "$BK/user-avatars/." /opt/planka/public/user-avatars/
+    [ -d "$BK/background-images" ] && cp -a "$BK/background-images/." /opt/planka/public/background-images/
+    [ -d "$BK/attachments" ] && cp -a "$BK/attachments/." /opt/planka/private/attachments/
+    rm -rf "$BK"
     msg_ok "Restored data"
 
-    msg_info "Starting $APP"
+    msg_info "Starting Service"
     systemctl start planka
-    msg_ok "Started $APP"
-    msg_ok "Update Successful"
+    msg_ok "Started Service"
+    msg_ok "Updated successfully!"
   fi
   exit
 }

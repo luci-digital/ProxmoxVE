@@ -15,9 +15,9 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
-$STD apt-get install -y \
+$STD apt install -y \
   diffutils \
-  policykit-1
+  polkitd
 msg_ok "Installed Dependencies"
 
 msg_info "Creating User"
@@ -30,11 +30,12 @@ fi
 
 mkdir -p /etc/pulse
 fetch_and_deploy_gh_release "pulse" "rcourtman/Pulse" "prebuild" "latest" "/opt/pulse" "*-linux-amd64.tar.gz"
+ln -sf /opt/pulse/bin/pulse /usr/local/bin/pulse
 chown -R pulse:pulse /etc/pulse /opt/pulse
 msg_ok "Installed Pulse"
 
 msg_info "Creating Service"
-cat <<EOF >/etc/systemd/system/pulse-backend.service
+cat <<EOF >/etc/systemd/system/pulse.service
 [Unit]
 Description=Pulse Monitoring Server
 After=network.target
@@ -55,13 +56,14 @@ Environment="PULSE_DATA_DIR=/etc/pulse"
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable -q --now pulse-backend
+systemctl enable -q --now pulse
 msg_ok "Created Service"
 
 motd_ssh
 customize
 
 msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
+$STD apt -y autoremove
+$STD apt -y autoclean
+$STD apt -y clean
 msg_ok "Cleaned"

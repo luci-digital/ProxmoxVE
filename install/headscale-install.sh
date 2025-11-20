@@ -18,32 +18,30 @@ fetch_and_deploy_gh_release "headscale" "juanfont/headscale" "binary"
 read -r -p "${TAB3}Would you like to add headscale-admin UI? <y/N> " prompt
 if [[ ${prompt,,} =~ ^(y|yes)$ ]]; then
   fetch_and_deploy_gh_release "headscale-admin" "GoodiesHQ/headscale-admin" "prebuild" "latest" "/opt/headscale-admin" "admin.zip"
-  
+
   msg_info "Configuring headscale-admin"
-  $STD apt-get install -y caddy
+  $STD apt install -y caddy
   $STD caddy stop
   rm /etc/caddy/Caddyfile
   cat <<'EOF' >/etc/caddy/Caddyfile
-:{$PORT:80}
+:80
+
+redir /admin /admin/
 
 handle_path /admin* {
-        root * /opt/headscale-admin
-        encode gzip zstd
+    root * /opt/headscale-admin
+    encode gzip zstd
 
-        # Correct MIME types for JS/WASM
-        header {
-                @js_files path *.js
-                @wasm_files path *.wasm
+    header {
+        X-Content-Type-Options nosniff
+    }
 
-                Content-Type @js_files application/javascript
-                Content-Type @wasm_files application/wasm
+    try_files {path} {path}/ /opt/headscale-admin/index.html
+    file_server
+}
 
-                X-Content-Type-Options nosniff
-        }
-
-        # Fallback for SPA routing
-        try_files {path} {path}/ index.html
-        file_server
+handle /api/* {
+    reverse_proxy localhost:8080
 }
 
 EOF
@@ -58,8 +56,4 @@ msg_ok "Service started"
 
 motd_ssh
 customize
-
-msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
-msg_ok "Cleaned"
+cleanup_lxc

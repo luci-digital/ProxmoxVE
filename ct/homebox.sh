@@ -11,7 +11,7 @@ var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-4}"
 var_os="${var_os:-debian}"
-var_version="${var_version:-12}"
+var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
@@ -34,9 +34,9 @@ function update_script() {
   fi
 
   if check_for_gh_release "homebox" "sysadminsmedia/homebox"; then
-    msg_info "Stopping ${APP}"
+    msg_info "Stopping Service"
     systemctl stop homebox
-    msg_ok "${APP} Stopped"
+    msg_ok "Stopped Service"
 
     if [ -f /opt/homebox ] && [ -x /opt/homebox ]; then
       rm -f /opt/homebox
@@ -46,10 +46,10 @@ function update_script() {
     [ -f /opt/.env ] && mv /opt/.env /opt/homebox/.env
     [ -d /opt/.data ] && mv /opt/.data /opt/homebox/.data
 
-    msg_info "Starting ${APP}"
+    msg_info "Starting Service"
     systemctl start homebox
-    msg_ok "Started ${APP}"
-    msg_ok "Updated Successfully"
+    msg_ok "Started Service"
+    msg_ok "Updated successfully!"
   fi
   exit
 }

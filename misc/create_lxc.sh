@@ -200,7 +200,6 @@ if qm status "$CTID" &>/dev/null || pct status "$CTID" &>/dev/null; then
 fi
 
 # This checks for the presence of valid Container Storage and Template Storage locations
-msg_info "Validating storage"
 if ! check_storage_support "rootdir"; then
   msg_error "No valid storage found for 'rootdir' [Container]"
   exit 1
@@ -210,7 +209,6 @@ if ! check_storage_support "vztmpl"; then
   exit 1
 fi
 
-#msg_info "Checking template storage"
 while true; do
   if select_storage template; then
     TEMPLATE_STORAGE="$STORAGE_RESULT"
@@ -345,7 +343,7 @@ if ! pct create "$CTID" "${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE}" "${PCT_OPTIONS[
     msg_error "Template appears to be corrupted – re-downloading."
     rm -f "$TEMPLATE_PATH"
   else
-    msg_error "Template is valid, but container creation still failed."
+    msg_error "Template is valid, but container creation failed. Update your whole Proxmox System (pve-container) first or check https://github.com/community-scripts/ProxmoxVE/discussions/8126"
     exit 209
   fi
 

@@ -11,7 +11,7 @@ var_cpu="${var_cpu:-2}"
 var_ram="${var_ram:-1024}"
 var_disk="${var_disk:-5}"
 var_os="${var_os:-debian}"
-var_version="${var_version:-12}"
+var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
@@ -39,9 +39,9 @@ function update_script() {
   if check_for_gh_release "paymenter" "paymenter/paymenter"; then
     msg_info "Updating ${APP}"
     cd /opt/paymenter
-    $STD php artisan p:upgrade --no-interaction
+    $STD php artisan app:upgrade --no-interaction
     echo "${CHECK_UPDATE_RELEASE}" >~/.paymenter
-    msg_ok "Updated Successfully"
+    msg_ok "Updated successfully!"
   fi
   exit
 }

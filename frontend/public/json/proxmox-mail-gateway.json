@@ -1,5 +1,5 @@
 {
-    "name": "Proxmox Mail Gateway",
+    "name": "Proxmox Mail Gateway (PMG)",
     "slug": "proxmox-mail-gateway",
     "categories": [
         1
@@ -23,7 +23,7 @@
                 "ram": 4096,
                 "hdd": 10,
                 "os": "debian",
-                "version": "12"
+                "version": "13"
             }
         }
     ],

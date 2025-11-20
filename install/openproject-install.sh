@@ -14,7 +14,7 @@ network_check
 update_os
 
 msg_info "Installing Dependencies"
-$STD apt-get install -y \
+$STD apt install -y \
   apt-transport-https \
   ca-certificates
 msg_ok "Installed Dependencies"
@@ -40,11 +40,11 @@ msg_ok "Set up PostgreSQL"
 msg_info "Setting up OpenProject Repository"
 curl -fsSL "https://dl.packager.io/srv/opf/openproject/key" | gpg --dearmor >/etc/apt/trusted.gpg.d/packager-io.gpg
 curl -fsSL "https://dl.packager.io/srv/opf/openproject/stable/15/installer/debian/12.repo" -o "/etc/apt/sources.list.d/openproject.list"
-$STD apt-get update
+$STD apt update
 msg_ok "Setup OpenProject Repository"
 
 msg_info "Installing OpenProject"
-$STD apt-get install -y openproject
+$STD apt install -y openproject
 msg_ok "Installed OpenProject"
 
 msg_info "Configuring OpenProject"
@@ -66,7 +66,6 @@ server/hostname ${IP_ADDR}
 server/server_path_prefix /openproject
 server/ssl no
 server/variant apache2
-server/server_path_prefix
 repositories/api-key ${API_KEY}
 repositories/svn-install skip
 repositories/git-install install
@@ -84,6 +83,7 @@ motd_ssh
 customize
 
 msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
+$STD apt -y autoremove
+$STD apt -y autoclean
+$STD apt -y clean
 msg_ok "Cleaned"

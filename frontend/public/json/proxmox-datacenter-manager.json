@@ -1,5 +1,5 @@
 {
-  "name": "Proxmox Datacenter Manager",
+  "name": "Proxmox Datacenter Manager (PDM)",
   "slug": "proxmox-datacenter-manager",
   "categories": [
     1
@@ -23,7 +23,7 @@
         "ram": 2048,
         "hdd": 10,
         "os": "debian",
-        "version": "12"
+        "version": "13"
       }
     }
   ],

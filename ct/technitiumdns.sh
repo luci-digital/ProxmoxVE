@@ -28,18 +28,24 @@ function update_script() {
     exit
   fi
 
+  if is_package_installed "aspnetcore-runtime-8.0"; then
+    $STD apt remove -y aspnetcore-runtime-8.0
+    $STD apt install -y aspnetcore-runtime-9.0
+  fi
+
   RELEASE=$(curl -fsSL https://technitium.com/dns/ | grep -oP 'Version \K[\d.]+')
   if [[ ! -f ~/.technitium || "${RELEASE}" != "$(cat ~/.technitium)" ]]; then
-    msg_info "Updating ${APP}"
+    msg_info "Updating Technitium DNS"
     curl -fsSL "https://download.technitium.com/dns/DnsServerPortable.tar.gz" -o /opt/DnsServerPortable.tar.gz
     $STD tar zxvf /opt/DnsServerPortable.tar.gz -C /opt/technitium/dns/
-    msg_ok "Updated Successfully"
+    msg_ok "Updated Technitium DNS"
 
     msg_info "Cleaning up"
     rm -f /opt/DnsServerPortable.tar.gz
     msg_ok "Cleaned up"
+    msg_ok "Updated successfully!"
   else
-    msg_ok "No update required.  ${APP} is already at v${RELEASE}."
+    msg_ok "No update required.  Technitium DNS is already at v${RELEASE}."
   fi
   exit
 }

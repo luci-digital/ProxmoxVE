@@ -11,7 +11,7 @@ var_cpu="${var_cpu:-1}"
 var_ram="${var_ram:-512}"
 var_disk="${var_disk:-2}"
 var_os="${var_os:-debian}"
-var_version="${var_version:-12}"
+var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
 
 header_info "$APP"
@@ -29,8 +29,8 @@ function update_script() {
     exit
   fi
   if check_for_gh_release "2fauth" "Bubka/2FAuth"; then
-    $STD apt-get update
-    $STD apt-get -y upgrade
+    $STD apt update
+    $STD apt -y upgrade
 
     msg_info "Creating Backup"
     mv "/opt/2fauth" "/opt/2fauth-backup"
@@ -54,18 +54,19 @@ function update_script() {
     chown -R www-data: "/opt/2fauth"
     chmod -R 755 "/opt/2fauth"
     export COMPOSER_ALLOW_SUPERUSER=1
-    $STD composer install --no-dev --prefer-source
+    $STD composer install --no-dev --prefer-dist
     php artisan 2fauth:install
     $STD systemctl restart nginx
 
     msg_info "Cleaning Up"
     if dpkg -l | grep -q 'php8.2'; then
-      $STD apt-get remove --purge -y php8.2*
+      $STD apt remove --purge -y php8.2*
     fi
-    $STD apt-get -y autoremove
-    $STD apt-get -y autoclean
+    $STD apt -y autoremove
+    $STD apt -y autoclean
+    $STD apt -y clean
     msg_ok "Cleanup Completed"
-    msg_ok "Updated Successfully"
+    msg_ok "Updated successfully!"
   fi
   exit
 }

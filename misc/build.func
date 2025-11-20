@@ -26,7 +26,7 @@ elif command -v wget >/dev/null 2>&1; then
 fi
 # This function enables error handling in the script by setting options and defining a trap for the ERR signal.
 catch_errors() {
-  set -Eeuo pipefail
+  set -Eeo pipefail
   trap 'error_handler $LINENO "$BASH_COMMAND"' ERR
 }
 
@@ -42,11 +42,11 @@ error_handler() {
   echo -e "\n$error_message\n"
 }
 
-# Check if the shell is using bash
+# Check if the current shell is using bash
 shell_check() {
-  if [[ "$(basename "$SHELL")" != "bash" ]]; then
+  if [[ "$(ps -p $$ -o comm=)" != "bash" ]]; then
     clear
-    msg_error "Your default shell is currently not set to Bash. To use these scripts, please switch to the Bash shell."
+    msg_error "Your default shell is not bash. Please report this to our github issues or discord."
     echo -e "\nExiting..."
     sleep 2
     exit
@@ -65,7 +65,7 @@ root_check() {
 }
 
 # This function checks the version of Proxmox Virtual Environment (PVE) and exits if the version is not supported.
-# Supported: Proxmox VE 8.0.x – 8.9.x and 9.0 (NOT 9.1+)
+# Supported: Proxmox VE 8.0.x – 8.9.x, 9.0 and 9.1
 pve_check() {
   local PVE_VER
   PVE_VER="$(pveversion | awk -F'/' '{print $2}' | awk -F'-' '{print $1}')"
@@ -81,12 +81,12 @@ pve_check() {
     return 0
   fi
 
-  # Check for Proxmox VE 9.x: allow ONLY 9.0
+  # Check for Proxmox VE 9.x: allow 9.0 and 9.1
   if [[ "$PVE_VER" =~ ^9\.([0-9]+) ]]; then
     local MINOR="${BASH_REMATCH[1]}"
-    if ((MINOR != 0)); then
-      msg_error "This version of Proxmox VE is not yet supported."
-      msg_error "Supported: Proxmox VE version 9.0"
+    if ((MINOR < 0 || MINOR > 1)); then
+      msg_error "This version of Proxmox VE is not supported."
+      msg_error "Supported: Proxmox VE version 9.0 – 9.1"
       exit 1
     fi
     return 0
@@ -94,7 +94,7 @@ pve_check() {
 
   # All other unsupported versions
   msg_error "This version of Proxmox VE is not supported."
-  msg_error "Supported versions: Proxmox VE 8.0 – 8.x or 9.0"
+  msg_error "Supported versions: Proxmox VE 8.0 – 8.x or 9.0 – 9.1"
   exit 1
 }
 
@@ -200,41 +200,32 @@ ssh_check() {
 
 base_settings() {
   # Default Settings
-  CT_TYPE="1"
-  DISK_SIZE="4"
-  CORE_COUNT="1"
-  RAM_SIZE="1024"
-  VERBOSE="${1:-no}"
-  PW=""
-  CT_ID=$NEXTID
-  HN=$NSAPP
-  BRG="vmbr0"
-  NET="dhcp"
-  IPV6_METHOD="none"
-  IPV6_STATIC=""
-  GATE=""
-  APT_CACHER=""
-  APT_CACHER_IP=""
-  MTU=""
-  SD=""
-  NS=""
-  MAC=""
-  VLAN=""
-  SSH="no"
-  SSH_AUTHORIZED_KEY=""
-  TAGS="community-script;"
-  ENABLE_FUSE="${1:-no}"
-  ENABLE_TUN="${1:-no}"
-
-  # Override default settings with variables from ct script
-  CT_TYPE=${var_unprivileged:-$CT_TYPE}
-  DISK_SIZE=${var_disk:-$DISK_SIZE}
-  CORE_COUNT=${var_cpu:-$CORE_COUNT}
-  RAM_SIZE=${var_ram:-$RAM_SIZE}
-  VERB=${var_verbose:-$VERBOSE}
-  TAGS="${TAGS}${var_tags:-}"
-  ENABLE_FUSE="${var_fuse:-$ENABLE_FUSE}"
-  ENABLE_TUN="${var_tun:-$ENABLE_TUN}"
+  CT_TYPE=${var_unprivileged:-"1"}
+  DISK_SIZE=${var_disk:-"4"}
+  CORE_COUNT=${var_cpu:-"1"}
+  RAM_SIZE=${var_ram:-"1024"}
+  VERBOSE=${var_verbose:-"${1:-no}"}
+  PW=${var_pw:-""}
+  CT_ID=${var_ctid:-$NEXTID}
+  HN=${var_hostname:-$NSAPP}
+  BRG=${var_brg:-"vmbr0"}
+  NET=${var_net:-"dhcp"}
+  IPV6_METHOD=${var_ipv6_method:-"none"}
+  IPV6_STATIC=${var_ipv6_static:-""}
+  GATE=${var_gateway:-""}
+  APT_CACHER=${var_apt_cacher:-""}
+  APT_CACHER_IP=${var_apt_cacher_ip:-""}
+  MTU=${var_mtu:-""}
+  SD=${var_storage:-""}
+  NS=${var_ns:-""}
+  MAC=${var_mac:-""}
+  VLAN=${var_vlan:-""}
+  SSH=${var_ssh:-"no"}
+  SSH_AUTHORIZED_KEY=${var_ssh_authorized_key:-""}
+  UDHCPC_FIX=${var_udhcpc_fix:-""}
+  TAGS="community-script;${var_tags:-}"
+  ENABLE_FUSE=${var_fuse:-"${1:-no}"}
+  ENABLE_TUN=${var_tun:-"${1:-no}"}
 
   # Since these 2 are only defined outside of default_settings function, we add a temporary fallback. TODO: To align everything, we should add these as constant variables (e.g. OSTYPE and OSVERSION), but that would currently require updating the default_settings function for all existing scripts
   if [ -z "$var_os" ]; then
@@ -244,6 +235,7 @@ base_settings() {
     var_version="12"
   fi
 }
+
 write_config() {
   mkdir -p /opt/community-scripts
   # This function writes the configuration to a file.
@@ -354,7 +346,7 @@ echo_default() {
   echo -e "${DISKSIZE}${BOLD}${DGN}Disk Size: ${BGN}${DISK_SIZE} GB${CL}"
   echo -e "${CPUCORE}${BOLD}${DGN}CPU Cores: ${BGN}${CORE_COUNT}${CL}"
   echo -e "${RAMSIZE}${BOLD}${DGN}RAM Size: ${BGN}${RAM_SIZE} MiB${CL}"
-  if [ "$VERB" == "yes" ]; then
+  if [ "$VERBOSE" == "yes" ]; then
     echo -e "${SEARCH}${BOLD}${DGN}Verbose Mode: ${BGN}Enabled${CL}"
   fi
   echo -e "${CREATING}${BOLD}${BL}Creating a ${APP} LXC using the above default settings${CL}"
@@ -1086,6 +1078,7 @@ start() {
       ;;
     esac
     update_script
+    cleanup_lxc
   fi
 }
 
