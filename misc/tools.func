@@ -4439,7 +4439,7 @@ function setup_rust() {
     }
 
     # Update to latest patch version
-    $STD rustup update "$RUST_TOOLCHAIN" || true
+    $STD rustup update "$RUST_TOOLCHAIN" </dev/null || true
 
     # Ensure PATH is updated for current shell session
     export PATH="$CARGO_BIN:$PATH"

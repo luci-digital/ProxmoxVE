@@ -10,7 +10,40 @@
 > [!CAUTION]
 Exercise vigilance regarding copycat or coat-tailing sites that seek to exploit the project's popularity for potentially malicious purposes.
 
+## 2025-11-22
+
+## 2025-11-21
+
+### 🚀 Updated Scripts
+
+  - #### 🐞 Bug Fixes
+
+    - plex: prevent [] syntax issue [@MickLesk](https://github.com/MickLesk) ([#9318](https://github.com/community-scripts/ProxmoxVE/pull/9318))
+    - fix: karakeep strip "v" from release version [@CrazyWolf13](https://github.com/CrazyWolf13) ([#9324](https://github.com/community-scripts/ProxmoxVE/pull/9324))
+    - NetVisor: fix grep in update [@vhsdream](https://github.com/vhsdream) ([#9334](https://github.com/community-scripts/ProxmoxVE/pull/9334))
+    - Immich: pin correct version [@vhsdream](https://github.com/vhsdream) ([#9332](https://github.com/community-scripts/ProxmoxVE/pull/9332))
+
+  - #### 🔧 Refactor
+
+    - Refactor IPv6 disable logic and add 'disable' option [@MickLesk](https://github.com/MickLesk) ([#9326](https://github.com/community-scripts/ProxmoxVE/pull/9326))
+
 ## 2025-11-20
+
+### 🚀 Updated Scripts
+
+  - #### 🐞 Bug Fixes
+
+    - core: change 'uv cache clear' to 'uv cache clean' [@MickLesk](https://github.com/MickLesk) ([#9299](https://github.com/community-scripts/ProxmoxVE/pull/9299))
+
+  - #### ✨ New Features
+
+    - Immich v2.3.1: OpenVINO tuning, OCR fixes, Maintenance mode, workflows/plugin framework [@vhsdream](https://github.com/vhsdream) ([#9310](https://github.com/community-scripts/ProxmoxVE/pull/9310))
+    - kasm: add: update [@CrazyWolf13](https://github.com/CrazyWolf13) ([#9253](https://github.com/community-scripts/ProxmoxVE/pull/9253))
+    - tools/pve: expand PVE support to 9.0–9.1 (post-install & netdata) [@MickLesk](https://github.com/MickLesk) ([#9298](https://github.com/community-scripts/ProxmoxVE/pull/9298))
+
+  - #### 💥 Breaking Changes
+
+    - Omada - AVX-only support [@MickLesk](https://github.com/MickLesk) ([#9295](https://github.com/community-scripts/ProxmoxVE/pull/9295))
 
 ## 2025-11-19
 

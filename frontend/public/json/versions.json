@@ -1,13 +1,238 @@
 [
   {
-    "name": "esphome/esphome",
-    "version": "2025.11.0",
-    "date": "2025-11-19T22:37:46Z"
+    "name": "TwiN/gatus",
+    "version": "v5.33.0",
+    "date": "2025-11-21T22:54:49Z"
+  },
+  {
+    "name": "BerriAI/litellm",
+    "version": "v1.78.5-stable-patch-1",
+    "date": "2025-11-21T19:57:45Z"
+  },
+  {
+    "name": "laurent22/joplin",
+    "version": "server-v3.4.4",
+    "date": "2025-09-25T13:19:26Z"
+  },
+  {
+    "name": "homarr-labs/homarr",
+    "version": "v1.44.0",
+    "date": "2025-11-21T19:17:09Z"
+  },
+  {
+    "name": "gelbphoenix/autocaliweb",
+    "version": "v0.11.0",
+    "date": "2025-11-21T18:42:15Z"
+  },
+  {
+    "name": "rclone/rclone",
+    "version": "v1.72.0",
+    "date": "2025-11-21T18:20:58Z"
+  },
+  {
+    "name": "readeck/readeck",
+    "version": "0.21.1",
+    "date": "2025-11-21T17:17:52Z"
+  },
+  {
+    "name": "mattermost/mattermost",
+    "version": "v10.11.8",
+    "date": "2025-11-21T17:06:07Z"
+  },
+  {
+    "name": "home-assistant/core",
+    "version": "2025.11.3",
+    "date": "2025-11-21T17:03:22Z"
+  },
+  {
+    "name": "Bubka/2FAuth",
+    "version": "v5.6.1",
+    "date": "2025-11-21T16:51:21Z"
+  },
+  {
+    "name": "steveiliop56/tinyauth",
+    "version": "v4.0.1",
+    "date": "2025-10-15T16:53:55Z"
+  },
+  {
+    "name": "BookStackApp/BookStack",
+    "version": "v25.11.3",
+    "date": "2025-11-21T14:06:50Z"
+  },
+  {
+    "name": "pommee/goaway",
+    "version": "v0.62.19",
+    "date": "2025-11-21T13:24:09Z"
+  },
+  {
+    "name": "fuma-nama/fumadocs",
+    "version": "fumadocs-ui@16.1.0",
+    "date": "2025-11-21T13:02:57Z"
+  },
+  {
+    "name": "forgejo/forgejo",
+    "version": "v13.0.3",
+    "date": "2025-11-21T12:43:04Z"
+  },
+  {
+    "name": "bunkerity/bunkerweb",
+    "version": "v1.6.5",
+    "date": "2025-10-06T15:25:17Z"
+  },
+  {
+    "name": "chrisbenincasa/tunarr",
+    "version": "v0.23.0-alpha.24",
+    "date": "2025-11-21T12:16:39Z"
+  },
+  {
+    "name": "rcourtman/Pulse",
+    "version": "v4.32.3",
+    "date": "2025-11-21T11:16:25Z"
+  },
+  {
+    "name": "seriousm4x/UpSnap",
+    "version": "5.2.4",
+    "date": "2025-11-21T10:25:05Z"
+  },
+  {
+    "name": "emqx/emqx",
+    "version": "e6.0.2-beta.2",
+    "date": "2025-11-21T10:20:27Z"
+  },
+  {
+    "name": "sabnzbd/sabnzbd",
+    "version": "4.5.5",
+    "date": "2025-10-24T11:12:22Z"
+  },
+  {
+    "name": "openobserve/openobserve",
+    "version": "v0.16.3",
+    "date": "2025-11-21T08:54:06Z"
+  },
+  {
+    "name": "booklore-app/booklore",
+    "version": "v1.11.0",
+    "date": "2025-11-21T08:09:03Z"
+  },
+  {
+    "name": "MariaDB/server",
+    "version": "mariadb-12.1.2",
+    "date": "2025-11-18T15:16:21Z"
+  },
+  {
+    "name": "morpheus65535/bazarr",
+    "version": "v1.5.3",
+    "date": "2025-09-20T12:12:33Z"
+  },
+  {
+    "name": "Jackett/Jackett",
+    "version": "v0.24.338",
+    "date": "2025-11-21T05:55:33Z"
+  },
+  {
+    "name": "bluenviron/mediamtx",
+    "version": "v1.15.4",
+    "date": "2025-11-21T01:21:03Z"
+  },
+  {
+    "name": "jeedom/core",
+    "version": "4.4.20",
+    "date": "2025-11-21T00:27:06Z"
+  },
+  {
+    "name": "TasmoAdmin/TasmoAdmin",
+    "version": "v4.3.2",
+    "date": "2025-10-18T12:11:00Z"
+  },
+  {
+    "name": "project-zot/zot",
+    "version": "v2.1.11",
+    "date": "2025-11-20T20:14:44Z"
+  },
+  {
+    "name": "saltstack/salt",
+    "version": "v3007.9",
+    "date": "2025-11-20T17:58:32Z"
+  },
+  {
+    "name": "keycloak/keycloak",
+    "version": "26.4.5",
+    "date": "2025-11-12T15:24:23Z"
+  },
+  {
+    "name": "msgbyte/tianji",
+    "version": "v1.30.12",
+    "date": "2025-11-20T16:13:19Z"
+  },
+  {
+    "name": "neo4j/neo4j",
+    "version": "5.26.17",
+    "date": "2025-11-20T16:09:28Z"
+  },
+  {
+    "name": "meilisearch/meilisearch",
+    "version": "prototype-v1.26.0.arm-native-docker-build-1",
+    "date": "2025-11-20T15:38:39Z"
+  },
+  {
+    "name": "duplicati/duplicati",
+    "version": "v2.2.0.101-2.2.0.101_canary_2025-11-20",
+    "date": "2025-11-20T14:50:45Z"
+  },
+  {
+    "name": "NodeBB/NodeBB",
+    "version": "v4.6.3",
+    "date": "2025-11-20T14:13:22Z"
+  },
+  {
+    "name": "n8n-io/n8n",
+    "version": "n8n@1.120.4",
+    "date": "2025-11-19T12:57:55Z"
+  },
+  {
+    "name": "SigNoz/signoz",
+    "version": "v0.102.1",
+    "date": "2025-11-20T12:20:18Z"
+  },
+  {
+    "name": "kimai/kimai",
+    "version": "2.44.0",
+    "date": "2025-11-20T11:01:01Z"
+  },
+  {
+    "name": "itsmng/itsm-ng",
+    "version": "v2.1.1",
+    "date": "2025-11-20T10:54:07Z"
+  },
+  {
+    "name": "Athou/commafeed",
+    "version": "5.12.0",
+    "date": "2025-11-20T06:18:58Z"
+  },
+  {
+    "name": "documenso/documenso",
+    "version": "v2.0.14",
+    "date": "2025-11-20T04:12:40Z"
   },
   {
     "name": "immich-app/immich",
-    "version": "v2.3.0",
-    "date": "2025-11-19T22:36:35Z"
+    "version": "v2.3.1",
+    "date": "2025-11-20T03:10:27Z"
+  },
+  {
+    "name": "nextcloud/nextcloudpi",
+    "version": "v1.56.0",
+    "date": "2025-11-20T02:28:35Z"
+  },
+  {
+    "name": "coder/code-server",
+    "version": "v4.106.2",
+    "date": "2025-11-20T00:23:05Z"
+  },
+  {
+    "name": "esphome/esphome",
+    "version": "2025.11.0",
+    "date": "2025-11-19T22:37:46Z"
   },
   {
     "name": "TandoorRecipes/recipes",
@@ -30,16 +255,6 @@
     "date": "2025-05-29T17:08:26Z"
   },
   {
-    "name": "BerriAI/litellm",
-    "version": "v1.77.3-stable-patch-2",
-    "date": "2025-11-19T19:00:37Z"
-  },
-  {
-    "name": "coder/code-server",
-    "version": "v4.106.0",
-    "date": "2025-11-19T18:01:23Z"
-  },
-  {
     "name": "tailscale/tailscale",
     "version": "v1.90.8",
     "date": "2025-11-19T16:30:57Z"
@@ -48,16 +263,6 @@
     "name": "dgtlmoon/changedetection.io",
     "version": "0.51.3",
     "date": "2025-11-19T15:45:28Z"
-  },
-  {
-    "name": "NodeBB/NodeBB",
-    "version": "v4.6.2",
-    "date": "2025-11-19T15:31:59Z"
-  },
-  {
-    "name": "BookStackApp/BookStack",
-    "version": "v25.11.2",
-    "date": "2025-11-19T15:26:29Z"
   },
   {
     "name": "grafana/grafana",
@@ -85,21 +290,6 @@
     "date": "2025-11-19T14:16:07Z"
   },
   {
-    "name": "nextcloud/nextcloudpi",
-    "version": "v1.56.0",
-    "date": "2025-11-19T14:11:24Z"
-  },
-  {
-    "name": "mattermost/mattermost",
-    "version": "v10.11.7",
-    "date": "2025-11-17T08:40:53Z"
-  },
-  {
-    "name": "n8n-io/n8n",
-    "version": "n8n@1.120.4",
-    "date": "2025-11-19T12:57:55Z"
-  },
-  {
     "name": "AdguardTeam/AdGuardHome",
     "version": "v0.107.69",
     "date": "2025-10-30T15:31:50Z"
@@ -115,21 +305,6 @@
     "date": "2025-11-19T08:36:29Z"
   },
   {
-    "name": "SigNoz/signoz",
-    "version": "v0.102.0",
-    "date": "2025-11-19T06:53:59Z"
-  },
-  {
-    "name": "morpheus65535/bazarr",
-    "version": "v1.5.3",
-    "date": "2025-09-20T12:12:33Z"
-  },
-  {
-    "name": "Jackett/Jackett",
-    "version": "v0.24.327",
-    "date": "2025-11-19T05:55:51Z"
-  },
-  {
     "name": "element-hq/synapse",
     "version": "v1.143.0rc1",
     "date": "2025-11-19T00:09:31Z"
@@ -140,39 +315,14 @@
     "date": "2025-06-14T17:45:06Z"
   },
   {
-    "name": "jeedom/core",
-    "version": "4.4.20",
-    "date": "2025-11-19T00:27:10Z"
-  },
-  {
-    "name": "steveiliop56/tinyauth",
-    "version": "v4.0.1",
-    "date": "2025-10-15T16:53:55Z"
-  },
-  {
     "name": "gtsteffaniak/filebrowser",
     "version": "v1.0.1-stable",
     "date": "2025-11-10T16:51:44Z"
   },
   {
-    "name": "bunkerity/bunkerweb",
-    "version": "testing",
-    "date": "2025-11-17T16:24:26Z"
-  },
-  {
-    "name": "chrisbenincasa/tunarr",
-    "version": "v0.23.0-alpha.23",
-    "date": "2025-11-18T21:36:15Z"
-  },
-  {
     "name": "umami-software/umami",
     "version": "v3.0.1",
     "date": "2025-11-18T18:50:35Z"
-  },
-  {
-    "name": "keycloak/keycloak",
-    "version": "26.4.5",
-    "date": "2025-11-12T15:24:23Z"
   },
   {
     "name": "seerr-team/seerr",
@@ -185,19 +335,9 @@
     "date": "2025-11-18T16:25:16Z"
   },
   {
-    "name": "MariaDB/server",
-    "version": "mariadb-12.1.2",
-    "date": "2025-11-18T15:16:21Z"
-  },
-  {
     "name": "redis/redis",
     "version": "8.4.0",
     "date": "2025-11-18T15:06:37Z"
-  },
-  {
-    "name": "fuma-nama/fumadocs",
-    "version": "create-fumadocs-app@16.0.17",
-    "date": "2025-11-18T12:28:43Z"
   },
   {
     "name": "NginxProxyManager/nginx-proxy-manager",
@@ -210,19 +350,9 @@
     "date": "2025-11-18T10:50:21Z"
   },
   {
-    "name": "emqx/emqx",
-    "version": "e6.1.0-alpha.1",
-    "date": "2025-11-18T10:33:45Z"
-  },
-  {
     "name": "wazuh/wazuh",
     "version": "coverity-w47-4.14.2",
     "date": "2025-11-18T07:24:43Z"
-  },
-  {
-    "name": "documenso/documenso",
-    "version": "v2.0.13",
-    "date": "2025-11-18T05:59:02Z"
   },
   {
     "name": "0xERR0R/blocky",
@@ -260,11 +390,6 @@
     "date": "2025-11-17T15:20:35Z"
   },
   {
-    "name": "meilisearch/meilisearch",
-    "version": "latest",
-    "date": "2025-11-17T09:29:20Z"
-  },
-  {
     "name": "rabbitmq/rabbitmq-server",
     "version": "v4.2.1",
     "date": "2025-11-17T02:47:15Z"
@@ -295,11 +420,6 @@
     "date": "2025-08-23T18:33:53Z"
   },
   {
-    "name": "TwiN/gatus",
-    "version": "v5.32.0",
-    "date": "2025-11-16T21:08:56Z"
-  },
-  {
     "name": "binwiederhier/ntfy",
     "version": "v2.15.0",
     "date": "2025-11-16T18:53:49Z"
@@ -308,11 +428,6 @@
     "name": "Luligu/matterbridge",
     "version": "3.3.8",
     "date": "2025-11-16T17:04:37Z"
-  },
-  {
-    "name": "msgbyte/tianji",
-    "version": "v1.30.11",
-    "date": "2025-11-16T16:21:04Z"
   },
   {
     "name": "AlexxIT/go2rtc",
@@ -370,21 +485,6 @@
     "date": "2025-11-14T22:50:06Z"
   },
   {
-    "name": "home-assistant/core",
-    "version": "2025.11.2",
-    "date": "2025-11-14T22:10:50Z"
-  },
-  {
-    "name": "homarr-labs/homarr",
-    "version": "v1.43.3",
-    "date": "2025-11-14T19:16:17Z"
-  },
-  {
-    "name": "kimai/kimai",
-    "version": "2.43.0",
-    "date": "2025-11-14T17:20:16Z"
-  },
-  {
     "name": "mealie-recipes/mealie",
     "version": "v3.5.0",
     "date": "2025-11-14T16:23:33Z"
@@ -393,11 +493,6 @@
     "name": "Dolibarr/dolibarr",
     "version": "22.0.3",
     "date": "2025-11-14T14:49:25Z"
-  },
-  {
-    "name": "openobserve/openobserve",
-    "version": "v0.16.2",
-    "date": "2025-11-14T12:05:36Z"
   },
   {
     "name": "zitadel/zitadel",
@@ -425,19 +520,9 @@
     "date": "2025-11-14T05:05:44Z"
   },
   {
-    "name": "rcourtman/Pulse",
-    "version": "v4.31.0",
-    "date": "2025-11-14T00:18:50Z"
-  },
-  {
     "name": "gristlabs/grist-core",
     "version": "v1.7.7",
     "date": "2025-11-13T21:28:44Z"
-  },
-  {
-    "name": "pommee/goaway",
-    "version": "v0.62.18",
-    "date": "2025-11-13T19:49:21Z"
   },
   {
     "name": "pocketbase/pocketbase",
@@ -555,11 +640,6 @@
     "date": "2025-11-09T17:26:30Z"
   },
   {
-    "name": "duplicati/duplicati",
-    "version": "v2.2.0.1_stable_2025-11-09",
-    "date": "2025-11-09T17:21:54Z"
-  },
-  {
     "name": "Cleanuparr/Cleanuparr",
     "version": "v2.4.5",
     "date": "2025-11-09T17:14:01Z"
@@ -653,11 +733,6 @@
     "name": "Notifiarr/notifiarr",
     "version": "v0.9.1",
     "date": "2025-11-06T02:26:53Z"
-  },
-  {
-    "name": "neo4j/neo4j",
-    "version": "5.26.16",
-    "date": "2025-11-05T20:41:40Z"
   },
   {
     "name": "leiweibau/Pi.Alert",
@@ -815,19 +890,9 @@
     "date": "2025-10-29T22:09:26Z"
   },
   {
-    "name": "laurent22/joplin",
-    "version": "server-v3.4.4",
-    "date": "2025-09-25T13:19:26Z"
-  },
-  {
     "name": "apache/cassandra",
     "version": "cassandra-5.0.6",
     "date": "2025-10-29T07:40:47Z"
-  },
-  {
-    "name": "booklore-app/booklore",
-    "version": "v1.10.0",
-    "date": "2025-10-28T19:04:35Z"
   },
   {
     "name": "pi-hole/pi-hole",
@@ -855,19 +920,9 @@
     "date": "2025-10-26T14:23:37Z"
   },
   {
-    "name": "forgejo/forgejo",
-    "version": "v13.0.2",
-    "date": "2025-10-26T06:33:05Z"
-  },
-  {
     "name": "usememos/memos",
     "version": "v0.25.2",
     "date": "2025-10-24T12:30:04Z"
-  },
-  {
-    "name": "sabnzbd/sabnzbd",
-    "version": "4.5.5",
-    "date": "2025-10-24T11:12:22Z"
   },
   {
     "name": "crowdsecurity/crowdsec",
@@ -895,24 +950,9 @@
     "date": "2025-10-22T10:28:00Z"
   },
   {
-    "name": "bluenviron/mediamtx",
-    "version": "v1.15.3",
-    "date": "2025-10-21T19:56:55Z"
-  },
-  {
     "name": "kyantech/Palmr",
     "version": "v3.2.5-beta",
     "date": "2025-10-21T16:49:14Z"
-  },
-  {
-    "name": "rclone/rclone",
-    "version": "v1.71.2",
-    "date": "2025-10-20T15:25:52Z"
-  },
-  {
-    "name": "seriousm4x/UpSnap",
-    "version": "5.2.3",
-    "date": "2025-10-19T20:50:15Z"
   },
   {
     "name": "Part-DB/Part-DB-server",
@@ -928,21 +968,6 @@
     "name": "ellite/Wallos",
     "version": "v4.5.0",
     "date": "2025-10-18T22:00:50Z"
-  },
-  {
-    "name": "project-zot/zot",
-    "version": "v2.1.10",
-    "date": "2025-10-18T18:46:36Z"
-  },
-  {
-    "name": "TasmoAdmin/TasmoAdmin",
-    "version": "v4.3.2",
-    "date": "2025-10-18T12:11:00Z"
-  },
-  {
-    "name": "readeck/readeck",
-    "version": "0.20.4",
-    "date": "2025-10-18T10:00:42Z"
   },
   {
     "name": "diced/zipline",
@@ -993,11 +1018,6 @@
     "name": "globaleaks/globaleaks-whistleblowing-software",
     "version": "v5.0.85",
     "date": "2025-10-12T19:55:18Z"
-  },
-  {
-    "name": "gelbphoenix/autocaliweb",
-    "version": "v0.10.4",
-    "date": "2025-10-11T19:53:39Z"
   },
   {
     "name": "projectsend/projectsend",
@@ -1080,16 +1100,6 @@
     "date": "2025-09-24T13:51:23Z"
   },
   {
-    "name": "itsmng/itsm-ng",
-    "version": "v2.1.0",
-    "date": "2025-09-22T09:23:37Z"
-  },
-  {
-    "name": "Athou/commafeed",
-    "version": "5.11.1",
-    "date": "2025-09-22T02:21:27Z"
-  },
-  {
     "name": "gotify/server",
     "version": "v2.7.3",
     "date": "2025-09-21T12:07:19Z"
@@ -1103,11 +1113,6 @@
     "name": "mmastrac/stylus",
     "version": "v0.17.0",
     "date": "2025-09-19T22:23:28Z"
-  },
-  {
-    "name": "saltstack/salt",
-    "version": "v3007.8",
-    "date": "2025-09-18T18:19:04Z"
   },
   {
     "name": "docmost/docmost",
@@ -1313,11 +1318,6 @@
     "name": "pterodactyl/panel",
     "version": "v1.11.11",
     "date": "2025-06-18T18:04:50Z"
-  },
-  {
-    "name": "Bubka/2FAuth",
-    "version": "v5.6.0",
-    "date": "2025-06-18T12:19:54Z"
   },
   {
     "name": "TriliumNext/Notes",
